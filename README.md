@@ -16,11 +16,16 @@ Dependencies
 
 Instructions
 ------------
-* Start the mongo database process
+* Start the mongo database process:
+
     sudo mongod
+
 * Start the node server:
+
     node main.js
+
 * Hit the node server with a request, using this curl command:
+
     curl -i -H "Content-type: application/json" -X POST -d '{"message":"hello world"}' http://localhost:8082
 
 This will hit display output from the node process running on your machine, as well as insert a record into the Mongo database.
