@@ -40,7 +40,7 @@ app.http.before = [
 ];
 app.start(8082);
 
-var io = require('socket.io').listen(8083);
+var io = require('socket.io').listen(app.server);
 
 io.sockets.on('connection', function(socket) {
   socket.emit('news', { hello: 'world'});
