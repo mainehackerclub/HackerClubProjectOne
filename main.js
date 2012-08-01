@@ -6,6 +6,8 @@
 var flatiron = require('flatiron'),
   app = flatiron.app,
   util = require('util'),
+  union = require('union'),
+  ecstatic = require('ecstatic'),
   mongo = require('mongojs').connect('hcp1');
 
 
@@ -33,4 +35,17 @@ app.router.post('/',function () {
 });
 
 console.log('Flatiron app: starting');
+app.http.before = [
+  ecstatic('.')
+];
 app.start(8082);
+
+var io = require('socket.io').listen(8083);
+
+io.sockets.on('connection', function(socket) {
+  socket.emit('news', { hello: 'world'});
+  socket.on('my other event', function (data) {
+    console.log(data);
+  });
+});
+
