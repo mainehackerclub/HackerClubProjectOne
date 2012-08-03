@@ -24,19 +24,15 @@ Instructions
 
     node main.js
 
-* Hit the node server with a request, using this curl command:
+* Hit the node server with some requests using these commands:
 
-    curl -i -H "Content-type: application/json" -X POST -d '{"message":"hello world"}' http://localhost:8082
+List all audit data:
+curl -i -H "Content-type: application/json" -X GET http://localhost:8082/audit
 
-This will hit display output from the node process running on your machine, as well as insert a record into the Mongo database.
+Add some audit data:
+curl -i -H "Content-type: application/json" -X POST http://localhost:8082/audit -d '{"visitor":{"name":"Garrett","age":"30"}}'
 
-Add your "I was here" message below
------------------------------------
+Get all events:
+curl -i -H "Content-type: application/json" -X GET http://localhost:8082/events
 
-Slashthedragon was here.
-
-Hello World! Well I should say: Hello Hacker Club!
-This is Zack Schiller. I am just testing out this whole GitHub commit stuff.
-Here I go...
-
-This is Garrett committing from my linode server at http://hc1.goodnyou.me.
+Loading localhost:8082 in your brower will create an event.  Try re-loading the page and then running the curl command again to see the results.

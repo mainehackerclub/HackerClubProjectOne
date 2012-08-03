@@ -1,12 +1,31 @@
 <html>
 <head>
   <title>Hacker Club Project One</title>
+  <script type="text/javascript" src="http://l2.io/ip.js?var=myip"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script>
+
+    function Event(kind, method, url, data) {
+      this.kind = kind;
+      this.method = method;
+      this.url = url;
+      this.data = data;
+    };
+    
+    function Client(IP, ID) {
+      this.IP = IP;
+      this.ID = ID;
+    };
+
     var socket = io.connect('http://localhost');
-    socket.on('news', function(data) {
+    var randId = Math.floor(Math.random()*1000000000);
+    var client = new Client(myip, randId);
+    var event = new Event('web', 'hit', '/', client); 
+    console.log(event);
+    socket.emit('clientIP', event);
+    console.log(myip);
+    socket.on('hit', function(data) {
       console.log(data);
-      socket.emit('my other event', { my: 'data' });
     });
   </script>
 </head>
