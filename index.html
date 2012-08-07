@@ -3,6 +3,8 @@
   <title>Hacker Club Project One</title>
   <script type="text/javascript" src="http://l2.io/ip.js?var=myip"></script>
   <script src="/socket.io/socket.io.js"></script>
+  <script type="text/javascript" src="src/d3/d3.js"></script>
+  <script type="text/javascript" src="src/d3/d3.geom.js"></script>
   <script>
 
     function Event(kind, method, url, data) {
@@ -27,9 +29,32 @@
     socket.on('hit', function(data) {
       console.log(data);
     });
+
   </script>
 </head>
 <body>
   A beginning.
+  <div id="wow1"></div>
+  <div id="wow2"></div>
+  <script type="text/javascript">
+    var wow1 = d3.select("#wow1")
+        .append("svg")
+        .attr("width", 200)
+        .attr("height", 200);
+
+    wow1.append("circle")
+      .style("stroke", "gray")
+      .style("fill", "yellow")
+      .attr("r", 90)
+      .attr("cx", 100)
+      .attr("cy", 100);
+
+   socket.on('pulse', function(data) {
+       var circle = wow1.selectAll("circle");
+       circle.attr("r",30);
+       console.log(data);
+       });
+
+  </script>
 </body>
 </html>

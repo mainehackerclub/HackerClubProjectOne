@@ -116,3 +116,13 @@ io.sockets.on('connection', function(socket) {
   });
 });
 
+app.router.get('/pulse',function(){
+  var self = this;
+  console.log('we didnt crash!');
+  io.sockets.emit('pulse', {r:'50', fill:'blue'});
+  var code = 200;
+  var meta = new Meta('success','/pulse',0);
+  self.res.writeHead(code,JSONtype);
+  self.res.write(JSON.stringify(meta) + ',\n');
+  self.res.end('\n');
+});
