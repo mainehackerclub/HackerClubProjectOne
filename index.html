@@ -50,8 +50,13 @@
       .attr("cy", 100);
 
    socket.on('pulse', function(data) {
+       console.log(data.r);
+       console.log(data.fill);
        var circle = wow1.selectAll("circle");
-       circle.attr("r",30);
+       circle.transition()
+         .duration(1000)
+         .attr("r",data.r)
+         .style("fill",data.fill);
        console.log(data);
        });
 

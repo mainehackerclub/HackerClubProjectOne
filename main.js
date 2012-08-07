@@ -30,11 +30,7 @@ function Meta(status, path, count) {
 }
 
 app.router.post('/audit',function () {
-
   var self = this;
-  var req = util.inspect(self.req.body, true, 3, true) + '\n';
-  console.log(req);
-
   var req = util.inspect(self.req.body, true, 3, true) + '\n';
   var meta = new Meta('success', '/audit', 0);
   console.log(req);
@@ -116,10 +112,17 @@ io.sockets.on('connection', function(socket) {
   });
 });
 
-app.router.get('/pulse',function(){
+function Circle(r, fill) {
+  this.r = r;
+  this.fill = fill;
+};
+
+app.router.post('/pulse',function(){
   var self = this;
-  console.log('we didnt crash!');
-  io.sockets.emit('pulse', {r:'50', fill:'blue'});
+  var data = self.req.body;
+  console.log(data);
+  var circle = new Circle(data.r,data.fill);
+  io.sockets.emit('pulse', circle);
   var code = 200;
   var meta = new Meta('success','/pulse',0);
   self.res.writeHead(code,JSONtype);
