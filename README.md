@@ -36,3 +36,9 @@ Get all events:
 curl -i -H "Content-type: application/json" -X GET http://localhost:8082/events
 
 Loading localhost:8082 in your brower will create an event.  Try re-loading the page and then running the curl command again to see the results.
+
+
+It is now possible to control a circle via HTTP POST on the index.html page.  Load it up, see the circle, and use commands like this to change the radius and color:
+
+curl -i -H "Content-type: application/json" -X POST http://localhost:8082/pulse -d '{"r":"50","fill":"purple"}'
+
