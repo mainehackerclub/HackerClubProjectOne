@@ -47,7 +47,8 @@ rect {
       socket.emit('force',e);
       socket.on('point',function(data) {
         console.log(data);
-        });
+        dropPoint(vis);
+      });
 
 
 //D3.js Force layout setup.
@@ -103,14 +104,18 @@ function linkPoint(node) {
   });
 };
 
-vis.on("mousedown", function() {
-  var point = d3.mouse(this),
+function dropPoint(vis) {
+  var point = d3.mouse(vis),
       node = {x: point[0], y: point[1]},
       n = nodes.push(node);
-  socket.emit('point',point);
-
   linkPoint(node);
+  return point;
+};
 
+vis.on("mousedown", function() {
+  var self  = this;
+  var point = dropPoint(self);
+  socket.emit('point',point);
   restart();
 });
 
