@@ -128,6 +128,7 @@ io.sockets.on('connection', function(socket) {
   });
   socket.on('point', function(data) {
     console.log('point event: ',data);
+    socket.broadcast.emit('point',data);
   });
 });
 

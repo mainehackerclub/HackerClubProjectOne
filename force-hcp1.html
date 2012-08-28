@@ -45,6 +45,10 @@ rect {
       var socket = io.connect(server);
       var e = new Event('web','hit','/force-hcp1.html', null);
       socket.emit('force',e);
+      socket.on('point',function(data) {
+        console.log(data);
+        });
+
 
 //D3.js Force layout setup.
 var width = 960,
