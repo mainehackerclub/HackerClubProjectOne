@@ -44,7 +44,6 @@ var vis = d3.select("#chart").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-var test = 'tmpvar';
       //Socket.io setup
       function Event(kind, method, url, data) {
         this.kind = kind;
@@ -63,8 +62,7 @@ var test = 'tmpvar';
       socket.emit('force',e);
       socket.on('point',function(data) {
         console.log(data);
-        console.log(test);
-        dropPointDisp(data);
+        socketDispatch.point(data);
       });
 
 
@@ -122,6 +120,7 @@ function dropPoint(vis) {
 };
 
 function dropPointDisp(socketPoint) {
+  console.log(socketPoint);
   var point = socketPoint;
       node = {x: point[0], y: point[1]},
       n = nodes.push(node);
