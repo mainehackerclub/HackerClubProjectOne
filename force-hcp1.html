@@ -92,12 +92,7 @@ vis.on("mousemove", function() {
   cursor.attr("transform", "translate(" + d3.mouse(this) + ")");
 });
 
-vis.on("mousedown", function() {
-  var point = d3.mouse(this),
-      node = {x: point[0], y: point[1]},
-      n = nodes.push(node);
-  socket.emit('point',point);
-
+function linkPoint(node) {
   // add links to any nearby nodes
   nodes.forEach(function(target) {
     var x = target.x - node.x,
@@ -106,6 +101,15 @@ vis.on("mousedown", function() {
       links.push({source: node, target: target});
     }
   });
+};
+
+vis.on("mousedown", function() {
+  var point = d3.mouse(this),
+      node = {x: point[0], y: point[1]},
+      n = nodes.push(node);
+  socket.emit('point',point);
+
+  linkPoint(node);
 
   restart();
 });
