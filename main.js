@@ -108,7 +108,7 @@ console.log('Flatiron app: starting');
 app.http.before = [
   ecstatic('.')
 ];
-app.start(8082);
+app.start(80);
 
 var io = require('socket.io').listen(app.server);
 
