@@ -10,7 +10,6 @@ var flatiron = require('flatiron'),
   ecstatic = require('ecstatic'),
   mongo = require('mongojs').connect('hcp1');
 
-
 app.use(flatiron.plugins.http);
 var audit = mongo.collection('audit');
 var events = mongo.collection('events');

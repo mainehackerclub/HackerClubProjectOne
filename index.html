@@ -4,7 +4,7 @@
   <script type="text/javascript" src="http://l2.io/ip.js?var=myip"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script type="text/javascript" src="src/d3/d3.js"></script>
-  <script type="text/javascript" src="src/d3/d3.geom.js"></script>
+  <script type="text/javascript" src="deploy.js"></script>
   <script>
 
     function Event(kind, method, url, data) {
@@ -19,7 +19,9 @@
       this.ID = ID;
     };
 
-    var socket = io.connect('http://localhost');
+    var host = new Deploy().hostname;
+    var server = 'http://'+host;
+    var socket = io.connect(server);
     var randId = Math.floor(Math.random()*1000000000);
     var client = new Client(myip, randId);
     var event = new Event('web', 'hit', '/', client); 
@@ -35,7 +37,6 @@
 <body>
   A beginning.
   <div id="wow1"></div>
-  <div id="wow2"></div>
   <script type="text/javascript">
     var wow1 = d3.select("#wow1")
         .append("svg")
@@ -59,6 +60,16 @@
          .style("fill",data.fill);
        console.log(data);
        });
+
+  var links = [{source:0,target:1}, {source:1,target:2}, {source:2,target:3}];
+  var nodes = [{name:'Aaron'},{name:'Denis'},{name:'Ben'},{name:'Zach'}];
+
+  var force = d3.layout.force()
+    .nodes(nodes)
+    .links(links)
+    .size(400,400)
+    .start(); 
+    
 
   </script>
 </body>
