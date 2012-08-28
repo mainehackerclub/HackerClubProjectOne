@@ -126,6 +126,9 @@ io.sockets.on('connection', function(socket) {
     var ev = new Event(data);
     console.log(ev.toString());
   });
+  socket.on('point', function(data) {
+    console.log('point event: ',data);
+  });
 });
 
 function Circle(r, fill) {
