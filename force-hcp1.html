@@ -102,6 +102,7 @@ vis.on("mousemove", function() {
 
 function linkPoint(node) {
   // add links to any nearby nodes
+  console.log('linkPoint ',node);
   nodes.forEach(function(target) {
     var x = target.x - node.x,
         y = target.y - node.y;
