@@ -40,8 +40,8 @@
   <script type="text/javascript">
     var wow1 = d3.select("#wow1")
         .append("svg")
-        .attr("width", 200)
-        .attr("height", 200);
+        .attr("width", 300)
+        .attr("height", 300);
 
     wow1.append("circle")
       .style("stroke", "gray")
@@ -61,16 +61,10 @@
        console.log(data);
        });
 
-  var links = [{source:0,target:1}, {source:1,target:2}, {source:2,target:3}];
-  var nodes = [{name:'Aaron'},{name:'Denis'},{name:'Ben'},{name:'Zach'}];
-
-  var force = d3.layout.force()
-    .nodes(nodes)
-    .links(links)
-    .size(400,400)
-    .start(); 
-    
-
   </script>
+  <p>
+  Use this command to update the radius and color of the circle:<br>
+  curl -i -H "Content-type: application/json" -X POST http://hc1.goodnyou.me:8082/pulse -d '{"r":"60","fill":"green"}'
+  </p>
 </body>
 </html>
