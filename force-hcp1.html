@@ -33,6 +33,18 @@ rect {
     <div id="chart"></div>
     <script type="text/javascript">
 
+//D3.js Force layout intialization.
+var width = 960,
+    height = 500,
+    fill = d3.scale.category20(),
+    nodes = [],
+    links = [];
+
+var vis = d3.select("#chart").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var test = 'tmpvar';
       //Socket.io setup
       function Event(kind, method, url, data) {
         this.kind = kind;
@@ -47,21 +59,12 @@ rect {
       socket.emit('force',e);
       socket.on('point',function(data) {
         console.log(data);
+        console.log(test);
         dropPoint(vis);
       });
 
 
-//D3.js Force layout setup.
-var width = 960,
-    height = 500,
-    fill = d3.scale.category20(),
-    nodes = [],
-    links = [];
-
-var vis = d3.select("#chart").append("svg")
-    .attr("width", width)
-    .attr("height", height);
-
+// Continuted D3.js Force layout setup.
 vis.append("rect")
     .attr("width", width)
     .attr("height", height);
