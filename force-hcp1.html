@@ -52,6 +52,10 @@ var test = 'tmpvar';
         this.url = url;
         this.data = data;
       };
+
+      //Custom dispatcher.
+      var socketDispatch = d3.dispatch("point");
+      socketDispatch.on("point",dropPointDisp);
       var host = new Deploy().hostname;
       var server = 'http://'+host;
       var socket = io.connect(server);
@@ -60,7 +64,7 @@ var test = 'tmpvar';
       socket.on('point',function(data) {
         console.log(data);
         console.log(test);
-        dropPoint(vis);
+        dropPointDisp(data);
       });
 
 
@@ -79,6 +83,8 @@ var cursor = vis.append("circle")
     .attr("r", 30)
     .attr("transform", "translate(-100,-100)")
     .attr("class", "cursor");
+
+
 
 force.on("tick", function() {
   vis.selectAll("line.link")
@@ -113,6 +119,13 @@ function dropPoint(vis) {
       n = nodes.push(node);
   linkPoint(node);
   return point;
+};
+
+function dropPointDisp(socketPoint) {
+  var point = socketPoint;
+      node = {x: point[0], y: point[1]},
+      n = nodes.push(node);
+  linkPoint(node);
 };
 
 vis.on("mousedown", function() {
