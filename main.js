@@ -22,6 +22,18 @@ function Event(kind, method, url, data) {
   this.data = data;
 };
 
+function Event( obj ) {
+  this.kind = obj.kind;
+  this.method = obj.method;
+  this.url = obj.url;
+  this.data = obj.data;
+};
+
+ Event.prototype.toString = function() {
+   var self = this;
+   return self.kind+' '+self.mmethod+' '+self.url;
+ }
+
 function Meta(status, path, count) {
   this.status = status;
   this.path = path;
@@ -108,6 +120,11 @@ io.sockets.on('connection', function(socket) {
     var d = data.data;
     socket.emit('hit', {IP: data.data.IP, ID: data.data.ID});
     events.save(data);
+  });
+  socket.on('force', function(data) {
+    console.log('force event: ',data);
+    var ev = new Event(data);
+    console.log(ev.toString());
   });
 });
 
