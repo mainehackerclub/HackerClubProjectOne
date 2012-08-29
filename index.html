@@ -6,31 +6,55 @@
   <script type="text/javascript" src="src/d3/d3.js"></script>
   <script type="text/javascript" src="deploy.js"></script>
   <script>
-
-    function Event(kind, method, url, data) {
+    
+    function Shlock( obj ) {
+      this.kind = obj.kind;
+      this.method = obj.method;
+      this.url = obj.url;
+      this.data = obj.data;
+      this.milliseconds = obj.milliseconds;
+    };
+    
+    function Shlock(kind, method, url, data) {
       this.kind = kind;
       this.method = method;
       this.url = url;
       this.data = data;
+      this.milliseconds = new Date().getTime();
     };
-    
+
+    Shlock.prototype.toString = function() {
+      var self = this;
+      var ms = self.milliseconds;
+      var d = new Date().setTime(ms);
+      return self.kind+' '+self.mmethod+' '+self.url+' '+d.toLocaleString();
+    }
+
     function Client(IP, ID) {
       this.IP = IP;
       this.ID = ID;
     };
 
+    Client.prototype.toString = function() {
+      var self = this;
+      return this.IP+' '+this.ID;
+    }
+
+    function clientIp() {
+      console.log('Executing clientIp');
+      var randId = Math.floor(Math.random()*1000000000);
+      var client = new Client(myip, randId);
+      console.log(client);
+      var ev = new Shlock('web', 'client', '\/', client); 
+      console.log(ev);
+      socket.emit('client', ev);
+      console.log(myip);
+    }
+
     var host = new Deploy().hostname;
     var server = 'http://'+host;
     var socket = io.connect(server);
-    var randId = Math.floor(Math.random()*1000000000);
-    var client = new Client(myip, randId);
-    var event = new Event('web', 'hit', '/', client); 
-    console.log(event);
-    socket.emit('clientIP', event);
-    console.log(myip);
-    socket.on('hit', function(data) {
-      console.log(data);
-    });
+    setTimeout(clientIp,1000);
 
   </script>
 </head>
@@ -64,7 +88,7 @@
   </script>
   <p>
   Use this command to update the radius and color of the circle:<br>
-  curl -i -H "Content-type: application/json" -X POST http://hc1.goodnyou.me:8082/pulse -d '{"r":"60","fill":"green"}'
+  curl -i -H "Content-type: application/json" -X POST http://hc1.goodnyou.me/pulse -d '{"r":"60","fill":"green"}'
   </p>
   <p>
   <a href="force-hcp1.html">dynamic force demo</a>

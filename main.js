@@ -12,26 +12,30 @@ var flatiron = require('flatiron'),
 
 app.use(flatiron.plugins.http);
 var audit = mongo.collection('audit');
-var events = mongo.collection('events');
+var shlocks = mongo.collection('shlocks');
 var JSONtype = { 'Content-Type': 'application/json' };
 
-function Event(kind, method, url, data) {
+function Shlock(kind, method, url, data) {
   this.kind = kind;
   this.method = method;
   this.url = url;
   this.data = data;
+  this.milliseconds = new Date().getTime();
 };
 
-function Event( obj ) {
+function Shlock( obj ) {
   this.kind = obj.kind;
   this.method = obj.method;
   this.url = obj.url;
   this.data = obj.data;
+  this.milliseconds = obj.milliseconds;
 };
 
- Event.prototype.toString = function() {
+ Shlock.prototype.toString = function() {
    var self = this;
-   return self.kind+' '+self.mmethod+' '+self.url;
+   var ms = self.milliseconds;
+   var d = new Date().setTime(ms);
+   return self.kind+' '+self.method+' '+self.url+' '+d.toLocaleString();
  }
 
 function Meta(status, path, count) {
@@ -48,9 +52,9 @@ app.router.post('/audit',function () {
   self.res.writeHead(200, JSONtype);
   self.res.write(JSON.stringify(meta));
   self.res.end('\n');
-  var event = new Event('api', 'post', '/audit', self.req.body);
-  audit.save(event);
-  console.log(event);
+  var shlock = new Shlock('api', 'post', '/audit', self.req.body);
+  audit.save(shlock);
+  console.log(shlock);
 });
 
 app.router.get('/audit',function() {
@@ -79,23 +83,23 @@ app.router.get('/audit',function() {
 
 });
 
-app.router.get('/events',function() {
+app.router.get('/shlocks',function() {
   var self = this;
   var req = util.inspect(self.req.body, true, 3, true) + '\n';
   console.log(req);
 
-  events.find(function(err,docs) {
+  shlocks.find(function(err,docs) {
     if (!err) {
       var code = 200;
       var length = docs.length;
-      var meta = new Meta('success','/events',length);
+      var meta = new Meta('success','/shlocks',length);
       self.res.writeHead(code, JSONtype);
       self.res.write(JSON.stringify(meta) + ',\n');
       self.res.write(JSON.stringify(docs));
       self.res.end('\n');
     } else {
       var code = 501;
-      var meta = new Meta('Internal server error','/events',length);
+      var meta = new Meta('Internal server error','/shlocks',length);
       self.res.writeHead(code, JSONtype);
       self.res.write(JSON.stringify(meta));
       self.res.end('\n');
@@ -114,20 +118,19 @@ var io = require('socket.io').listen(app.server);
 
 io.sockets.on('connection', function(socket) {
 
-  socket.on('clientIP', function (data) {
-    console.log(data);
+  socket.on('client', function (data) {
     var x = data.kind;
     var d = data.data;
-    socket.emit('hit', {IP: data.data.IP, ID: data.data.ID});
-    events.save(data);
+    shlocks.save(data);
+    console.log('client shlock:',data);
   });
   socket.on('force', function(data) {
-    console.log('force event: ',data);
-    var ev = new Event(data);
+    console.log('force shlock: ',data);
+    var ev = new Shlock(data);
     console.log(ev.toString());
   });
   socket.on('point', function(data) {
-    console.log('point event: ',data);
+    console.log('point shlock: ',data);
     socket.broadcast.emit('point',data);
   });
 });

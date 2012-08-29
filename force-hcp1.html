@@ -3,9 +3,63 @@
   <head>
     <title>D3.js Force-Directed Layout (Dynamic) - with Socket.io</title>
     <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="http://l2.io/ip.js?var=myip"></script>
     <script type="text/javascript" src="src/d3/d3.js"></script>
     <script type="text/javascript" src="deploy.js"></script>
     <script>
+    
+    // Socket.io Initialization
+    var host = new Deploy().hostname;
+    var server = 'http://'+host;
+    var socket = io.connect(server);
+
+    // Custom metrics objects
+    var randId = Math.floor(Math.random()*1000000000);
+    function Shlock( obj ) {
+      this.kind = obj.kind;
+      this.method = obj.method;
+      this.url = obj.url;
+      this.data = obj.data;
+      this.milliseconds = obj.milliseconds;
+    };
+    
+    function Shlock(kind, method, url, data) {
+      this.kind = kind;
+      this.method = method;
+      this.url = url;
+      this.data = data;
+      this.milliseconds = new Date().getTime();
+    };
+
+    Shlock.prototype.toString = function() {
+      var self = this;
+      var ms = self.milliseconds;
+      var d = new Date().setTime(ms);
+      return self.kind+' '+self.mmethod+' '+self.url+' '+d.toLocaleString();
+    }
+
+    // Tracking IP of visitors, logging time as well.
+    function Client(IP, ID) {
+      this.IP = IP;
+      this.ID = ID;
+    };
+
+    Client.prototype.toString = function() {
+      var self = this;
+      return this.IP+' '+this.ID;
+    }
+
+    function clientIp() {
+      console.log('Executing clientIp');
+      var client = new Client(myip, randId);
+      console.log(client);
+      var ev = new Shlock('web', 'client', '/force-hcp1.html', client); 
+      console.log(ev);
+      socket.emit('client', ev);
+      console.log(myip);
+    }
+    setTimeout(clientIp,1000);
+
     </script>
     <style type="text/css">
 
@@ -42,6 +96,7 @@ rect {
       <li> Both of you start clicking around in the white box. </li>
       <li> watch the dots appear on your screen.</li>
       <li> when you click, your friend sees it too.</li>
+      <li> Note that you can also try this with two different browser windows or for your smartphone and your laptop.</li>
     </ol>
     Many thanks to:
      <ol>
