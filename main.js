@@ -14,6 +14,7 @@ app.use(flatiron.plugins.http);
 var audit = mongo.collection('audit');
 var shlocks = mongo.collection('shlocks');
 var force = mongo.collection('force');
+var pulse = mongo.collection('pulse');
 var JSONtype = { 'Content-Type': 'application/json' };
 
 function Shlock(kind, method, url, data) {
@@ -22,14 +23,6 @@ function Shlock(kind, method, url, data) {
   this.url = url;
   this.data = data;
   this.milliseconds = new Date().getTime();
-};
-
-function Shlock( obj ) {
-  this.kind = obj.kind;
-  this.method = obj.method;
-  this.url = obj.url;
-  this.data = obj.data;
-  this.milliseconds = obj.milliseconds;
 };
 
  Shlock.prototype.toString = function() {
@@ -44,19 +37,6 @@ function Meta(status, path, count) {
   this.path = path;
   this.count = count;
 }
-
-app.router.post('/audit',function () {
-  var self = this;
-  var req = util.inspect(self.req.body, true, 3, true) + '\n';
-  var meta = new Meta('success', '/audit', 0);
-  console.log(req);
-  self.res.writeHead(200, JSONtype);
-  self.res.write(JSON.stringify(meta));
-  self.res.end('\n');
-  var shlock = new Shlock('api', 'post', '/audit', self.req.body);
-  audit.save(shlock);
-  console.log(shlock);
-});
 
 app.router.get('/audit',function() {
 
@@ -125,11 +105,6 @@ io.sockets.on('connection', function(socket) {
     shlocks.save(data);
     console.log('client shlock:',data);
   });
-  socket.on('force', function(data) {
-    console.log('force shlock: ',data);
-    var ev = new Shlock(data);
-    console.log(ev.toString());
-  });
   socket.on('point', function(data) {
     console.log('point shlock: ',data);
     socket.broadcast.emit('point',data);
@@ -142,15 +117,38 @@ function Circle(r, fill) {
   this.fill = fill;
 };
 
+// POST Handler
+//   Always returns status code 200 (success) to the client.
+//   Creates metrics data and saves it to Mongo.
+//   logs the event with metrics information.
+function postHandler( url, body, res, coll) {
+  var self = this;
+  var method = 'POST';
+  // Always return success
+  var code = 200;
+  var meta = new Meta('success',url,0);
+  res.writeHead(code,JSONtype);
+  res.write(JSON.stringify(meta) + ',\n');
+  res.end('\n');
+  // Create metrics data.
+  var shlock = new Shlock('api', method, url, body);
+  console.log(url,method,shlock);
+  coll.save(shlock);
+};
+
+// Takes radius and color from req.body and emits event to update a d3 circle.
 app.router.post('/pulse',function(){
   var self = this;
-  var data = self.req.body;
-  console.log(data);
-  var circle = new Circle(data.r,data.fill);
+  var body = self.req.body;
+  postHandler('/pulse', body, self.res, pulse);
+  // Update circles on clients.
+  var circle = new Circle(body.r,body.fill);
   io.sockets.emit('pulse', circle);
-  var code = 200;
-  var meta = new Meta('success','/pulse',0);
-  self.res.writeHead(code,JSONtype);
-  self.res.write(JSON.stringify(meta) + ',\n');
-  self.res.end('\n');
+});
+
+// Takes req.body and saves it into the audit collection.
+app.router.post('/audit',function () {
+  var self = this;
+  var body = self.req.body;
+  postHandler('/audit', body, self.res, audit);
 });

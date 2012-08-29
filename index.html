@@ -7,6 +7,13 @@
   <script type="text/javascript" src="deploy.js"></script>
   <script>
     
+    // Socket.io Initialization
+    var host = new Deploy().hostname;
+    var server = 'http://'+host;
+    var socket = io.connect(server);
+
+    // Custom metrics objects
+    var randId = Math.floor(Math.random()*1000000000);
     function Shlock( obj ) {
       this.kind = obj.kind;
       this.method = obj.method;
@@ -30,6 +37,7 @@
       return self.kind+' '+self.mmethod+' '+self.url+' '+d.toLocaleString();
     }
 
+    // Tracking IP of visitors, logging time as well.
     function Client(IP, ID) {
       this.IP = IP;
       this.ID = ID;
@@ -42,18 +50,13 @@
 
     function clientIp() {
       console.log('Executing clientIp');
-      var randId = Math.floor(Math.random()*1000000000);
       var client = new Client(myip, randId);
       console.log(client);
-      var ev = new Shlock('web', 'client', '\/', client); 
+      var ev = new Shlock('web', 'client', '/', client); 
       console.log(ev);
       socket.emit('client', ev);
       console.log(myip);
     }
-
-    var host = new Deploy().hostname;
-    var server = 'http://'+host;
-    var socket = io.connect(server);
     setTimeout(clientIp,1000);
 
   </script>
