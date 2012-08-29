@@ -13,6 +13,7 @@ var flatiron = require('flatiron'),
 app.use(flatiron.plugins.http);
 var audit = mongo.collection('audit');
 var shlocks = mongo.collection('shlocks');
+var force = mongo.collection('force');
 var JSONtype = { 'Content-Type': 'application/json' };
 
 function Shlock(kind, method, url, data) {
@@ -132,6 +133,7 @@ io.sockets.on('connection', function(socket) {
   socket.on('point', function(data) {
     console.log('point shlock: ',data);
     socket.broadcast.emit('point',data);
+    force.save(data);
   });
 });
 

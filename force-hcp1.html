@@ -12,6 +12,7 @@
     var host = new Deploy().hostname;
     var server = 'http://'+host;
     var socket = io.connect(server);
+    var gClient = {};
 
     // Custom metrics objects
     var randId = Math.floor(Math.random()*1000000000);
@@ -52,11 +53,10 @@
     function clientIp() {
       console.log('Executing clientIp');
       var client = new Client(myip, randId);
-      console.log(client);
+      gClient = client;
       var ev = new Shlock('web', 'client', '/force-hcp1.html', client); 
       console.log(ev);
       socket.emit('client', ev);
-      console.log(myip);
     }
     setTimeout(clientIp,1000);
 
@@ -120,25 +120,11 @@ var vis = d3.select("#chart").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-      //Socket.io setup
-      function Event(kind, method, url, data) {
-        this.kind = kind;
-        this.method = method;
-        this.url = url;
-        this.data = data;
-      };
-
       //Custom dispatcher.
       var socketDispatch = d3.dispatch("point");
       socketDispatch.on("point",socketPoint);
-      var host = new Deploy().hostname;
-      var server = 'http://'+host;
-      var socket = io.connect(server);
-      var e = new Event('web','hit','/force-hcp1.html', null);
-      socket.emit('force',e);
       socket.on('point',function(data) {
-        console.log(data);
-        socketDispatch.point(data);
+        socketDispatch.point(data.data);
       });
 
 
@@ -178,7 +164,7 @@ vis.on("mousemove", function() {
 
 function linkPoint(node) {
   // add links to any nearby nodes
-  console.log('linkPoint ',node);
+  //console.log('linkPoint ',node);
   nodes.forEach(function(target) {
     var x = target.x - node.x,
         y = target.y - node.y;
@@ -196,9 +182,9 @@ function mousePoint(vis) {
   return point;
 };
 
-function socketPoint(socketPoint) {
-  console.log(socketPoint);
-  var point = socketPoint;
+function socketPoint(data) {
+  console.log('socketPoint: ',data);
+  var point = data.point;
       node = {x: point[0], y: point[1], source:"socket"},
       n = nodes.push(node);
   linkPoint(node);
@@ -208,7 +194,11 @@ function socketPoint(socketPoint) {
 vis.on("mousedown", function() {
   var self  = this;
   var point = mousePoint(self);
-  socket.emit('point',point);
+  var pack = {};
+  pack.point = point;
+  pack.client = gClient;
+  var ev = new Shlock('web','point','/force-hcp1.html',pack);
+  socket.emit('point',ev);
   restart();
 });
 
