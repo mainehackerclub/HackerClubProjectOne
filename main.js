@@ -38,55 +38,158 @@ function Meta(status, path, count) {
   this.count = count;
 }
 
-app.router.get('/audit',function() {
+// Write standard meta data and header.
+function writeMeta(res,code,url,count) {
+  var meta = new Meta('success',url,count);
+  res.writeHead(code,JSONtype);
+  res.write(JSON.stringify(meta) + ',\n');
+}
 
+// POST Handler
+//   Always returns status code 200 (success) to the client.
+//   Creates metrics data and saves it to Mongo.
+//   logs the event with metrics information.
+function postHandler( url, body, res, coll) {
   var self = this;
-  var req = util.inspect(self.req.body, true, 3, true) + '\n';
-  console.log(req);
+  var method = 'POST';
+  // Always return success
+  writeMeta(res, 200,url,0);
+  res.end('\n');
+  // Create metrics data.
+  var shlock = new Shlock('api', method, url, body);
+  console.log(url,method,shlock);
+  coll.save(shlock);
+};
 
+// Handle Errors for GET API calls.
+function getHandlerError(res,url) {
+  writeMeta(res,501,url,0);
+  res.end('\n');
+}
+
+app.router.get('/audit',function() {
+  // Setup
+  var self = this;
+  var method = 'GET';
+  var url = '/shlocks';
+  var body = self.req.body;
+  
+  // Create metrics data.
+  var shlock = new Shlock('api', method, url, body);
+  console.log(url,method,shlock);
+
+  // Query Mongo
   audit.find(function(err,docs) {
     if (!err) {
-      var code = 200;
       var length = docs.length;
-      var meta = new Meta('success','/audit',length);
-      self.res.writeHead(code, JSONtype);
-      self.res.write(JSON.stringify(meta) + ',\n');
-      self.res.write(JSON.stringify(docs));
+      writeMeta(self.res,200,url,length);
+      // Process results from Mongo
+      docs.forEach(function(e,i,a) {
+        console.log(e,i,a);
+        self.res.write(JSON.stringify(e)+'\n');
+      });
+
       self.res.end('\n');
     } else {
-      var code = 501;
-      var status = {'status':'Internal server error','path':'/audit'};
-      self.res.writeHead(code, JSONtype);
-      self.res.write(JSON.stringify(status));
-      self.res.end('\n');
+      getHandlerError(res,url);
     }
   });
+});
 
+app.router.get('/force',function() {
+  // Setup
+  var self = this;
+  var method = 'GET';
+  var url = '/force';
+  var body = self.req.body;
+  
+  // Create metrics data.
+  var shlock = new Shlock('api', method, url, body);
+  console.log(url,method,shlock);
+
+  // Query Mongo
+  force.find(function(err,docs) {
+    if (!err) {
+      // Return Success & JSON Content-type
+      var length = docs.length;
+      writeMeta(self.res,200,url,length);
+
+      // Process results from Mongo
+      docs.forEach(function(e,i,a) {
+        console.log(e,i,a);
+        self.res.write(JSON.stringify(e)+'\n');
+      });
+
+      // Finalize response.
+      self.res.end('\n');
+    } else {
+      getHandlerError(res,url);
+    }
+  });
+});
+
+app.router.get('/pulse',function() {
+  // Setup
+  var self = this;
+  var method = 'GET';
+  var url = '/pulse';
+  var body = self.req.body;
+  
+  // Create metrics data.
+  var shlock = new Shlock('api', method, url, body);
+  console.log(url,method,shlock);
+
+  // Query Mongo
+  pulse.find(function(err,docs) {
+    if (!err) {
+      // Return Success & JSON Content-type
+      var length = docs.length;
+      writeMeta(self.res,200,url,length);
+
+      // Process results from Mongo
+      docs.forEach(function(e,i,a) {
+        console.log(e,i,a);
+        self.res.write(JSON.stringify(e)+'\n');
+      });
+
+      // Finalize response.
+      self.res.end('\n');
+    } else {
+      getHandlerError(res,url);
+    }
+  });
 });
 
 app.router.get('/shlocks',function() {
+  // Setup
   var self = this;
-  var req = util.inspect(self.req.body, true, 3, true) + '\n';
-  console.log(req);
+  var method = 'GET';
+  var url = '/shlocks';
+  var body = self.req.body;
+  
+  // Create metrics data.
+  var shlock = new Shlock('api', method, url, body);
+  console.log(url,method,shlock);
 
+  // Query Mongo
   shlocks.find(function(err,docs) {
     if (!err) {
-      var code = 200;
+      // Return Success & JSON Content-type
       var length = docs.length;
-      var meta = new Meta('success','/shlocks',length);
-      self.res.writeHead(code, JSONtype);
-      self.res.write(JSON.stringify(meta) + ',\n');
-      self.res.write(JSON.stringify(docs));
+      writeMeta(self.res,200,url,length);
+
+      // Process results from Mongo
+      docs.forEach(function(e,i,a) {
+        console.log(e,i,a);
+        self.res.write(JSON.stringify(e)+'\n');
+      });
+
+      // Finalize response.
       self.res.end('\n');
     } else {
-      var code = 501;
-      var meta = new Meta('Internal server error','/shlocks',length);
-      self.res.writeHead(code, JSONtype);
-      self.res.write(JSON.stringify(meta));
-      self.res.end('\n');
+      getHandlerError(res,url);
     }
   });
-
 });
 
 console.log('Flatiron app: starting');
@@ -115,25 +218,6 @@ io.sockets.on('connection', function(socket) {
 function Circle(r, fill) {
   this.r = r;
   this.fill = fill;
-};
-
-// POST Handler
-//   Always returns status code 200 (success) to the client.
-//   Creates metrics data and saves it to Mongo.
-//   logs the event with metrics information.
-function postHandler( url, body, res, coll) {
-  var self = this;
-  var method = 'POST';
-  // Always return success
-  var code = 200;
-  var meta = new Meta('success',url,0);
-  res.writeHead(code,JSONtype);
-  res.write(JSON.stringify(meta) + ',\n');
-  res.end('\n');
-  // Create metrics data.
-  var shlock = new Shlock('api', method, url, body);
-  console.log(url,method,shlock);
-  coll.save(shlock);
 };
 
 // Takes radius and color from req.body and emits event to update a d3 circle.

@@ -16,27 +16,20 @@
 
     // Custom metrics objects
     var randId = Math.floor(Math.random()*1000000000);
-    function Shlock( obj ) {
-      this.kind = obj.kind;
-      this.method = obj.method;
-      this.url = obj.url;
-      this.data = obj.data;
-      this.milliseconds = obj.milliseconds;
-    };
     
     function Shlock(kind, method, url, data) {
       this.kind = kind;
       this.method = method;
       this.url = url;
       this.data = data;
-      this.milliseconds = new Date().getTime();
+      this.time = new Date().toJSON();
     };
 
     Shlock.prototype.toString = function() {
       var self = this;
       var ms = self.milliseconds;
       var d = new Date().setTime(ms);
-      return self.kind+' '+self.mmethod+' '+self.url+' '+d.toLocaleString();
+      return self.kind+' '+self.mmethod+' '+self.url+' '+d;
     }
 
     // Tracking IP of visitors, logging time as well.
