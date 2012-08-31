@@ -16,11 +16,16 @@ var flatiron = require('flatiron'),
   mongo = require('mongojs').connect('hcp1');
 
 app.use(flatiron.plugins.http);
-var audit = mongo.collection('audit');
-var shlocks = mongo.collection('shlocks');
-var force = mongo.collection('force');
-var pulse = mongo.collection('pulse');
+
+// Mongo collections
+var audit   = mongo.collection('audit'),
+    shlocks = mongo.collection('shlocks'),
+    force   = mongo.collection('force'),
+    pulse   = mongo.collection('pulse');
+
+// Constants
 var JSONtype = { 'Content-Type': 'application/json' };
+var PAGE_SIZE = 100;
 
 function Shlock(kind, method, url, data) {
   this.kind = kind;
@@ -101,6 +106,7 @@ app.router.get('/audit',function() {
   });
 });
 
+// GET FORCE
 app.router.get('/force',function() {
   // Setup
   var self = this;
@@ -112,25 +118,68 @@ app.router.get('/force',function() {
   var shlock = new Shlock('api', method, url, body);
   console.log(url,method,shlock);
 
-  // Query Mongo
-  force.find(function(err,docs) {
-    if (!err) {
-      // Return Success & JSON Content-type
-      var length = docs.length;
-      writeMeta(self.res,200,url,length);
-
-      // Process results from Mongo
-      docs.forEach(function(e,i,a) {
-        console.log(e,i,a);
-        self.res.write(JSON.stringify(e)+'\n');
+  var query = self.req.query;
+  // Check for query string
+  if (Object.keys(query).length == 0) {
+    console.log('query empty: ',query);
+  } else {
+    console.log('query populated: ',query);
+    // Handle count
+    if (query.hasOwnProperty('count')) {
+      console.log('count: true');
+      force.count(function(err,docs) {
+        console.log('count: true, value: ', docs);
+        writeMeta(self.res,200,url,docs);
+        // Finalize response.
+        self.res.end('\n');
       });
-
-      // Finalize response.
-      self.res.end('\n');
     } else {
-      getHandlerError(self.res,url);
+      console.log('count: false');
+      // Handle paging
+      if (query.hasOwnProperty('page')) {
+        console.log('paging: true, page size ',
+                    PAGE_SIZE,
+                    ', page number ',
+                    query.page );
+        force.find(function(err,docs) {
+          console.log('find');
+          var length = docs.length;
+          writeMeta(self.res,200,url,length);
+      
+          // Process results from Mongo
+          docs.forEach(function(e,i,a) {
+            //console.log(e,i,a);
+            self.res.write(JSON.stringify(e)+'\n');
+          });
+      
+          // Finalize response.
+          self.res.end('\n');
+        }).skip(PAGE_SIZE*query.page)
+          .limit(PAGE_SIZE);
+      } else {
+        console.log('paging: false');
+        // Query Mongo
+        force.find(function(err,docs) {
+          if (!err) {
+            // Return Success & JSON Content-type
+            var length = docs.length;
+            writeMeta(self.res,200,url,length);
+
+            // Process results from Mongo
+            docs.forEach(function(e,i,a) {
+              //console.log(e,i,a);
+              self.res.write(JSON.stringify(e)+'\n');
+            });
+      
+            // Finalize response.
+            self.res.end('\n');
+          } else {
+            getHandlerError(self.res,url);
+          }
+        });
+      }
     }
-  });
+  }
 });
 
 app.router.get('/pulse',function() {
@@ -241,3 +290,5 @@ app.router.post('/audit',function () {
   var body = self.req.body;
   postHandler('/audit', body, self.res, audit);
 });
+
+console.log(app.router.routes);
