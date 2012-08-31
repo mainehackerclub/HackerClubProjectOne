@@ -47,7 +47,7 @@
       console.log('Executing clientIp');
       var client = new Client(myip, randId);
       console.log(client);
-      var ev = new Shlock('web', 'client', '/circle.html', client); 
+      var ev = new Shlock('web', 'client', '/index.html', client); 
       console.log(ev);
       socket.emit('client', ev);
       console.log(myip);
@@ -57,41 +57,24 @@
   </script>
 </head>
 <body>
-    <p>
-    This page is part of a project on <a href="https://github.com/garrettwilkin/HackerClubProjectOne">github</a>.
-    <br>
-    Authored by: <a href="https://github.com/garrettwilkin">Garrett Wilkin</a>
-    <br>
-    </p>
-  <div id="wow1"></div>
-  <script type="text/javascript">
-    var wow1 = d3.select("#wow1")
-        .append("svg")
-        .attr("width", 300)
-        .attr("height", 300);
-
-    wow1.append("circle")
-      .style("stroke", "gray")
-      .style("fill", "yellow")
-      .attr("r", 90)
-      .attr("cx", 100)
-      .attr("cy", 100);
-
-   socket.on('pulse', function(data) {
-       console.log(data.r);
-       console.log(data.fill);
-       var circle = wow1.selectAll("circle");
-       circle.transition()
-         .duration(1000)
-         .attr("r",data.r)
-         .style("fill",data.fill);
-       console.log(data);
-       });
-
-  </script>
   <p>
-  Use this command to update the radius and color of the circle:<br>
-  curl -i -H "Content-type: application/json" -X POST http://hc1.goodnyou.me/pulse -d '{"r":"60","fill":"green"}'
+  This page is part of a project on <a href="https://github.com/garrettwilkin/HackerClubProjectOne">github</a>.
+  <br>
+  Authored by: <a href="https://github.com/garrettwilkin">Garrett Wilkin</a>
+  <br>
+  </p>
+  <p>
+    <img src="HackerClub.jpeg">
+  </p>
+  <p>
+  List of projects:
+  <ol>
+    <li>
+      <a href="circle.html">Circle transformation triggered by HTTP requests</a>
+    </li>
+    <li>
+      <a href="force-hcp1.html">Real-time collaborative physics simulation</a>
+    </li>
   </p>
 </body>
 </html>
