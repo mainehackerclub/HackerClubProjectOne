@@ -1,6 +1,11 @@
 /*
  * Main.js 
  *
+ * Initializes Flation application.
+ * Defines REST API endpoints.
+ * Defines Socket.io events & handlers.
+ * Connects to Mongo as a data store.
+ *
  */
 
 var flatiron = require('flatiron'),
@@ -91,7 +96,7 @@ app.router.get('/audit',function() {
 
       self.res.end('\n');
     } else {
-      getHandlerError(res,url);
+      getHandlerError(self.res,url);
     }
   });
 });
@@ -123,7 +128,7 @@ app.router.get('/force',function() {
       // Finalize response.
       self.res.end('\n');
     } else {
-      getHandlerError(res,url);
+      getHandlerError(self.res,url);
     }
   });
 });
