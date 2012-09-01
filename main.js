@@ -106,6 +106,30 @@ app.router.get('/audit',function() {
   });
 });
 
+function isQueryValid(query) {
+  var valid = true;
+  if (Object.keys(query).length == 0) {
+    console.log('query empty');
+  } else {
+    // Check for page
+    if (query.hasOwnProperty('page')) {
+      if (isNaN(parseInt(query.page))) {
+        valid = false;
+      }
+    }
+    // Check for count
+    if (query.hasOwnProperty('count')) {
+      if (!(query.count === 'true' ||
+          query.count === 'false')) {
+        valid = false;
+      }
+    }
+    valid = false;
+  }
+  console.log('isQueryValid: ',valid);
+  return valid;
+}
+
 // GET FORCE
 app.router.get('/force',function() {
   // Setup
@@ -120,12 +144,13 @@ app.router.get('/force',function() {
 
   var query = self.req.query;
   // Check for query string
-  if (Object.keys(query).length == 0) {
-    console.log('query empty: ',query);
+  if (!isQueryValid(query)) {
+    console.log('query invalid: ',query);
   } else {
     console.log('query populated: ',query);
-    // Handle count
-    if (query.hasOwnProperty('count')) {
+    // Handle count=true
+    if (query.hasOwnProperty('count') &&
+        query.count === 'true') {
       console.log('count: true');
       force.count(function(err,docs) {
         console.log('count: true, value: ', docs);
