@@ -106,8 +106,18 @@ app.router.get('/audit',function() {
   });
 });
 
+function getFindCriteria(coll,query) {
+  var criteria = '';
+  switch (coll) {
+    case 'force':
+      console.log('crtieria for find');
+      break;
+  }
+}
+
 function isQueryValid(query) {
   var valid = true;
+  console.log(query);
   if (Object.keys(query).length == 0) {
     console.log('query empty');
   } else {
@@ -120,11 +130,16 @@ function isQueryValid(query) {
     // Check for count
     if (query.hasOwnProperty('count')) {
       if (!(query.count === 'true' ||
-          query.count === 'false')) {
+            query.count === 'false')) {
         valid = false;
       }
     }
-    valid = false;
+    // Check for filter
+    if (query.hasOwnProperty('filter')) {
+      if (!isNaN(query.filter)) {
+        valid = false;
+      }
+    }
   }
   console.log('isQueryValid: ',valid);
   return valid;
@@ -142,32 +157,25 @@ app.router.get('/force',function() {
   var shlock = new Shlock('api', method, url, body);
   console.log(url,method,shlock);
 
-  var query = self.req.query;
   // Check for query string
+  var query = self.req.query;
   if (!isQueryValid(query)) {
-    console.log('query invalid: ',query);
+    writeMeta(self.res,400,url,0);
+    // Finalize response.
+    self.res.end('\n');
   } else {
-    console.log('query populated: ',query);
     // Handle count=true
     if (query.hasOwnProperty('count') &&
         query.count === 'true') {
-      console.log('count: true');
       force.count(function(err,docs) {
-        console.log('count: true, value: ', docs);
         writeMeta(self.res,200,url,docs);
         // Finalize response.
         self.res.end('\n');
       });
     } else {
-      console.log('count: false');
       // Handle paging
       if (query.hasOwnProperty('page')) {
-        console.log('paging: true, page size ',
-                    PAGE_SIZE,
-                    ', page number ',
-                    query.page );
         force.find(function(err,docs) {
-          console.log('find');
           var length = docs.length;
           writeMeta(self.res,200,url,length);
       
@@ -182,7 +190,6 @@ app.router.get('/force',function() {
         }).skip(PAGE_SIZE*query.page)
           .limit(PAGE_SIZE);
       } else {
-        console.log('paging: false');
         // Query Mongo
         force.find(function(err,docs) {
           if (!err) {
@@ -282,8 +289,6 @@ var io = require('socket.io').listen(app.server);
 io.sockets.on('connection', function(socket) {
 
   socket.on('client', function (data) {
-    var x = data.kind;
-    var d = data.data;
     shlocks.save(data);
     console.log('client shlock:',data);
   });
