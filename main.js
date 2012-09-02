@@ -27,20 +27,17 @@ var audit   = mongo.collection('audit'),
 var JSONtype = { 'Content-Type': 'application/json' };
 var PAGE_SIZE = 100;
 
-function Shlock(kind, method, url, data) {
+// Merge - takes all properties from src and add them to dest.
+function merge(dest, src) {
+  Object.keys(src).forEach(function(key) {dest[key] = src[key]});
+};
+
+function Shlock(kind, method, url ) {
   this.kind = kind;
   this.method = method;
   this.url = url;
-  this.data = data;
   this.milliseconds = new Date().getTime();
 };
-
- Shlock.prototype.toString = function() {
-   var self = this;
-   var ms = self.milliseconds;
-   var d = new Date().setTime(ms);
-   return self.kind+' '+self.method+' '+self.url+' '+d.toLocaleString();
- }
 
 function Meta(status, path, count) {
   this.status = status;
@@ -66,7 +63,8 @@ function postHandler( url, body, res, coll) {
   writeMeta(res, 200,url,0);
   res.end('\n');
   // Create metrics data.
-  var shlock = new Shlock('api', method, url, body);
+  var shlock = new Shlock('api', method, url);
+  merge(shlock,body);
   console.log(url,method,shlock);
   coll.save(shlock);
 };
@@ -85,7 +83,8 @@ app.router.get('/audit',function() {
   var body = self.req.body;
   
   // Create metrics data.
-  var shlock = new Shlock('api', method, url, body);
+  var shlock = new Shlock('api', method, url);
+  merge(shlock,body);
   console.log(url,method,shlock);
 
   // Query Mongo
@@ -154,7 +153,8 @@ app.router.get('/force',function() {
   var body = self.req.body;
   
   // Create metrics data.
-  var shlock = new Shlock('api', method, url, body);
+  var shlock = new Shlock('api', method, url);
+  shlock.body = body;
   console.log(url,method,shlock);
 
   // Check for query string
@@ -222,7 +222,8 @@ app.router.get('/pulse',function() {
   var body = self.req.body;
   
   // Create metrics data.
-  var shlock = new Shlock('api', method, url, body);
+  var shlock = new Shlock('api', method, url);
+  shlock.body = body;
   console.log(url,method,shlock);
 
   // Query Mongo
@@ -254,7 +255,8 @@ app.router.get('/shlocks',function() {
   var body = self.req.body;
   
   // Create metrics data.
-  var shlock = new Shlock('api', method, url, body);
+  var shlock = new Shlock('api', method, url);
+  shlock.body = body;
   console.log(url,method,shlock);
 
   // Query Mongo
@@ -294,6 +296,7 @@ io.sockets.on('connection', function(socket) {
   });
   socket.on('point', function(data) {
     console.log('point shlock: ',data);
+    data.point = [data.coordX, data.coordY];
     socket.broadcast.emit('point',data);
     force.save(data);
   });

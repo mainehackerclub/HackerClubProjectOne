@@ -17,20 +17,17 @@
     // Custom metrics objects
     var randId = Math.floor(Math.random()*1000000000);
 
-    function Shlock(kind, method, url, data) {
+    // Merge - takes all properties from src and add them to dest.
+    function merge(dest, src) {
+      Object.keys(src).forEach(function(key) {dest[key] = src[key]});
+    }
+
+    function Shlock(kind, method, url) {
       this.kind = kind;
       this.method = method;
       this.url = url;
-      this.data = data;
       this.time = new Date().toJSON();
     };
-
-    Shlock.prototype.toString = function() {
-      var self = this;
-      var ms = self.milliseconds;
-      var d = new Date().setTime(ms);
-      return self.kind+' '+self.mmethod+' '+self.url+' '+d;
-    }
 
     // Tracking IP of visitors, logging time as well.
     function Client(IP, ID) {
@@ -47,7 +44,8 @@
       console.log('Executing clientIp');
       var client = new Client(myip, randId);
       console.log(client);
-      var ev = new Shlock('web', 'client', '/circle.html', client); 
+      var ev = new Shlock('web', 'client', '/circle.html'); 
+      merge(ev,client);
       console.log(ev);
       socket.emit('client', ev);
       console.log(myip);
