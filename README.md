@@ -3,31 +3,38 @@ Hacker Club Project One
 * Check out [our group's tumblr](http://mainehackerclub.tumblr.com).
 * Join our [google group](https://groups.google.com/forum/?fromgroups#!forum/maine-hacker-club).
 
-Currently in development:
-------------------------
-* Node REST HTTP API server with Mongo database
+Features
+--------
+* Interactive [D3.js](http://d3js.org) visualizations.
+* Shared user experience - updates are sent to all web browsers in 'real-time'.
+* REST HTTP API server
+* Mongo database
 
 Dependencies
 ------------
 * Node (see http://nodejs.org)
 * npm - node package manager
 * MongoDb
+ 
+Node Modules
+------------
 * npm install flatiron
 * npm install union
 * npm install mongojs
+* npm install socket.io
 
 Instructions
 ------------
 * Start the mongo database process:
-  * sudo mongod
+  * `sudo mongod`
 * Create admin and regular user.  See [MongoDB documentation](http://www.mongodb.org/display/DOCS/Security+and+Authentication) on how to do this.
 * Configure the environment with following variables:
   * MONGO_HOST localhost
   * MONGO_PORT 27017 (the default port)
-  * MONGO_USER <regular user>
-  * MONGO_PASS <regular user password>
+  * MONGO_USER `<regular user>`
+  * MONGO_PASS `<regular user password>`
 * Start the node server:
-  * sudo node main.js
+  * `sudo node main.js`
 
 API Calls 
 ---------
