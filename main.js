@@ -13,18 +13,51 @@ var flatiron = require('flatiron'),
   util = require('util'),
   union = require('union'),
   ecstatic = require('ecstatic'),
-  mongo = require('mongojs').connect('hcp1');
+  //Mongo connection
+  hcp1 = require('mongojs').connect('hcp1');
 
-app.use(flatiron.plugins.http);
-
-// Mongo collections
-var audit   = mongo.collection('audit'),
-    shlocks = mongo.collection('shlocks'),
-    force   = mongo.collection('force'),
-    pulse   = mongo.collection('pulse');
+//Environment variables must be set.
+validateEnv();
+var mUser = process.env.MONGO_USER,
+    mPass = process.env.MONGO_PASS;
 
 // Constants
 var JSONtype = { 'Content-Type': 'application/json' };
+
+//Mongo authentication
+hcp1.authenticate(mUser,mPass,function(err, data) {
+  if (!err) {
+    console.log('Database authentication successful.');
+  } else {
+    console.log('Database authentication error.  Aborting now.');
+    return process.exit(1);
+  }
+});
+
+// Mongo collections
+var audit   = hcp1.collection('audit'),
+    shlocks = hcp1.collection('shlocks'),
+    force   = hcp1.collection('force'),
+    pulse   = hcp1.collection('pulse');
+
+app.use(flatiron.plugins.http);
+
+function validateEnv() {
+  var fail = false;
+  console.log('Validating Environment');
+  if (!fail && process.env.MONGO_USER === undefined) {
+    fail = true;
+    console.log('MONGO_USER undefined');
+  };
+  if (!fail && process.env.MONGO_PASS === undefined) {
+    fail = true;
+    console.log('MONGO_PASS undefined');
+  };
+  if (fail) {
+    console.log(process.env);
+    return process.exit(1);
+  }
+};
 var PAGE_SIZE = 100;
 
 // Merge - takes all properties from src and add them to dest.
