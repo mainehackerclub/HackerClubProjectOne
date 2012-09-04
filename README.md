@@ -1,5 +1,7 @@
-HackerClubProjectOne
-====================
+Hacker Club Project One
+=======================
+* Check out [our group's tumblr](http://mainehackerclub.tumblr.com).
+* Join our [google group](https://groups.google.com/forum/?fromgroups#!forum/maine-hacker-club).
 
 Currently in development:
 ------------------------
