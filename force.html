@@ -11,6 +11,9 @@
     var socket = io.connect();
     var gClient = {};
 
+    //Constants
+    var URL = '/force.html';
+
     // Custom metrics objects
     var randId = Math.floor(Math.random()*1000000000);
     
@@ -41,7 +44,7 @@
       console.log('Executing clientIp');
       var client = new Client(myip, randId);
       gClient = client;
-      var ev = new Shlock('web', 'client', '/force-hcp1.html'); 
+      var ev = new Shlock('web', 'client', URL); 
       merge(ev,client);
       console.log(ev);
       socket.emit('client', ev);
@@ -185,7 +188,7 @@ vis.on("mousedown", function() {
   var pack = {};
   pack.coordX = point[0];
   pack.coordY = point[1];
-  var ev = new Shlock('web','point','/force-hcp1.html');
+  var ev = new Shlock('web','point',URL);
   merge(ev,pack);
   merge(ev,gClient);
   socket.emit('point',ev);
