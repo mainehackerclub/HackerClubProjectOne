@@ -11,8 +11,8 @@
 //Environment variables must be set.
 validateEnv();
 var mUser = process.env.MONGO_USER,
-    mPass = process.env.MONGO_PASS;
-    mHost = process.env.MONGO_HOST;
+    mPass = process.env.MONGO_PASS,
+    mHost = process.env.MONGO_HOST,
     mPort = process.env.MONGO_PORT;
 
 var flatiron = require('flatiron'),
@@ -22,10 +22,9 @@ var flatiron = require('flatiron'),
   ecstatic = require('ecstatic');
 
 //Mongo connection
-var mUrl = 'mongodb://'+mHost+':'+mPort+'/hcp1',
-    hcp1 = require('mongojs').connect(mUrl);
-
+var mUrl = 'mongodb://'+mHost+':'+mPort+'/hcp1';
 console.log('Mongo connection URL: ', mUrl);
+var hcp1 = require('mongojs').connect(mUrl);
 
 // Constants
 var JSONtype = { 'Content-Type': 'application/json' };

@@ -5,13 +5,10 @@
     <script src="/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="http://l2.io/ip.js?var=myip"></script>
     <script type="text/javascript" src="src/d3/d3.js"></script>
-    <script type="text/javascript" src="deploy.js"></script>
     <script>
     
     // Socket.io Initialization
-    var host = new Deploy().hostname;
-    var server = 'http://'+host;
-    var socket = io.connect(server);
+    var socket = io.connect();
     var gClient = {};
 
     // Custom metrics objects
