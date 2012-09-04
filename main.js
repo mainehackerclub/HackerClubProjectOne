@@ -8,21 +8,26 @@
  *
  */
 
-var flatiron = require('flatiron'),
-  app = flatiron.app,
-  util = require('util'),
-  union = require('union'),
-  ecstatic = require('ecstatic'),
-  //Mongo connection
-  hcp1 = require('mongojs').connect('hcp1');
-
 //Environment variables must be set.
 validateEnv();
 var mUser = process.env.MONGO_USER,
     mPass = process.env.MONGO_PASS;
+    mHost = process.env.MONGO_HOST;
+    mPort = process.env.MONGO_PORT;
+
+var flatiron = require('flatiron'),
+  app = flatiron.app,
+  util = require('util'),
+  union = require('union'),
+  ecstatic = require('ecstatic');
+
+//Mongo connection
+var mUrl = 'mongodb://'+mHost+':'+mPort+'/hcp1',
+    hcp1 = require('mongojs').connect(mUrl);
 
 // Constants
 var JSONtype = { 'Content-Type': 'application/json' };
+var PAGE_SIZE = 100;
 
 //Mongo authentication
 hcp1.authenticate(mUser,mPass,function(err, data) {
@@ -53,12 +58,19 @@ function validateEnv() {
     fail = true;
     console.log('MONGO_PASS undefined');
   };
+  if (!fail && process.env.MONGO_HOST === undefined) {
+    fail = true;
+    console.log('MONGO_HOST undefined');
+  };
+  if (!fail && process.env.MONGO_PORT === undefined) {
+    fail = true;
+    console.log('MONGO_PORT undefined');
+  };
   if (fail) {
     console.log(process.env);
     return process.exit(1);
   }
 };
-var PAGE_SIZE = 100;
 
 // Merge - takes all properties from src and add them to dest.
 function merge(dest, src) {
