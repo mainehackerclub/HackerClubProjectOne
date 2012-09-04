@@ -25,10 +25,13 @@ var flatiron = require('flatiron'),
 var mUrl = 'mongodb://'+mHost+':'+mPort+'/hcp1',
     hcp1 = require('mongojs').connect(mUrl);
 
+console.log('Mongo connection URL: ', mUrl);
+
 // Constants
 var JSONtype = { 'Content-Type': 'application/json' };
 var PAGE_SIZE = 100;
 
+console.log('attempt database authentication');
 //Mongo authentication
 hcp1.authenticate(mUser,mPass,function(err, data) {
   if (!err) {
@@ -49,26 +52,37 @@ app.use(flatiron.plugins.http);
 
 function validateEnv() {
   var fail = false;
+  var v = {};
   console.log('Validating Environment');
   if (!fail && process.env.MONGO_USER === undefined) {
     fail = true;
     console.log('MONGO_USER undefined');
+  } else {
+    v.MONGO_USER = process.env.MONGO_USER;
   };
   if (!fail && process.env.MONGO_PASS === undefined) {
     fail = true;
     console.log('MONGO_PASS undefined');
+  } else {
+    v.MONGO_PASS = 'xxxxx';
   };
   if (!fail && process.env.MONGO_HOST === undefined) {
     fail = true;
     console.log('MONGO_HOST undefined');
+  } else {
+    v.MONGO_HOST = process.env.MONGO_HOST;
   };
   if (!fail && process.env.MONGO_PORT === undefined) {
     fail = true;
     console.log('MONGO_PORT undefined');
+  } else {
+    v.MONGO_PORT = process.env.MONGO_PORT;
   };
   if (fail) {
     console.log(process.env);
     return process.exit(1);
+  } else {
+    console.log('Environment validated successfully\n',v);
   }
 };
 
