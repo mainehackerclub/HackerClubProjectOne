@@ -123,6 +123,7 @@ function postHandler( url, body, res, coll) {
   // Create metrics data.
   var shlock = new Shlock('api', method, url);
   merge(shlock,body);
+  shlock.source = mUser;
   console.log(url,method,shlock);
   coll.save(shlock);
 };
@@ -349,6 +350,7 @@ var io = require('socket.io').listen(app.server);
 io.sockets.on('connection', function(socket) {
 
   socket.on('client', function (data) {
+    data.source = mUser;
     shlocks.save(data);
     console.log('client shlock:',data);
   });
@@ -356,6 +358,7 @@ io.sockets.on('connection', function(socket) {
     console.log('point shlock: ',data);
     data.point = [data.coordX, data.coordY];
     socket.broadcast.emit('point',data);
+    data.source = mUser;
     force.save(data);
   });
 });
