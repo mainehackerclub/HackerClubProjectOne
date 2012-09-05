@@ -28,7 +28,7 @@ var hcp1 = require('mongojs').connect(mUrl);
 
 // Constants
 var JSONtype = { 'Content-Type': 'application/json' };
-var PAGE_SIZE = 100;
+var PAGE_SIZE = 20;
 
 console.log('attempt database authentication');
 //Mongo authentication
@@ -93,11 +93,6 @@ function validateEnv() {
   }
 };
 
-// Merge - takes all properties from src and add them to dest.
-function merge(dest, src) {
-  Object.keys(src).forEach(function(key) {dest[key] = src[key]});
-};
-
 function Shlock(kind, method, url ) {
   this.kind = kind;
   this.method = method;
@@ -130,7 +125,7 @@ function postHandler( url, body, res, coll) {
   res.end('\n');
   // Create metrics data.
   var shlock = new Shlock('api', method, url);
-  merge(shlock,body);
+  shlock.body = body;
   shlock.source = mUser;
   console.log(url,method,shlock);
   coll.save(shlock,saveCallback);
@@ -142,35 +137,6 @@ function getHandlerError(res,url) {
   res.end('\n');
 }
 
-app.router.get('/audit',function() {
-  // Setup
-  var self = this;
-  var method = 'GET';
-  var url = '/shlocks';
-  var body = self.req.body;
-  
-  // Create metrics data.
-  var shlock = new Shlock('api', method, url);
-  merge(shlock,body);
-  console.log(url,method,shlock);
-
-  // Query Mongo
-  audit.find(function(err,docs) {
-    if (!err) {
-      var length = docs.length;
-      writeMeta(self.res,200,url,length);
-      // Process results from Mongo
-      docs.forEach(function(e,i,a) {
-        console.log(e,i,a);
-        self.res.write(JSON.stringify(e)+'\n');
-      });
-
-      self.res.end('\n');
-    } else {
-      getHandlerError(self.res,url);
-    }
-  });
-});
 
 function getFindCriteria(coll,query) {
   var criteria = {};
@@ -235,6 +201,41 @@ function isQueryValid(query) {
   return valid;
 }
 
+function findHandler(err, docs, res, url) {
+  if (!err) {
+    // Return Success & JSON Content-type
+    var length = docs.length;
+    writeMeta(res,200,url,length);
+
+    // Process results from Mongo
+    docs.forEach(function(e,i,a) {
+      //console.log(e,i,a);
+      delete e._id;
+      res.write(JSON.stringify(e)+'\n');
+    });
+    res.end('\n');
+  } else {
+    getHandlerError(res,url);
+  }
+}
+
+// GET AUDIT
+app.router.get('/audit',function() {
+  // Setup
+  var self = this;
+  var method = 'GET';
+  var url = '/shlocks';
+  var body = self.req.body;
+  
+  // Create metrics data.
+  var shlock = new Shlock('api', method, url);
+  shlock.body = body;
+  console.log(url,method,shlock);
+
+  // Query Mongo
+  audit.find(function(err,docs) {findHandler(err,docs,self.res, url)});
+});
+
 // GET FORCE
 app.router.get('/force',function() {
   // Setup
@@ -267,38 +268,14 @@ app.router.get('/force',function() {
       if (query.hasOwnProperty('page')) {
         var only = getFindCriteria('force',query);
         var fields = getFindFields('force',query);
-        force.find(only,fields,function(err,docs) {
-          var length = docs.length;
-          writeMeta(self.res,200,url,length);
-      
-          // Process results from Mongo
-          docs.forEach(function(e,i,a) {
-            //console.log(e,i,a);
-            self.res.write(JSON.stringify(e)+'\n');
-          });
-          self.res.end('\n');
-        }).skip(PAGE_SIZE*query.page)
+        force.find(only,fields,function(err,docs) {findHandler(err,docs,self.res, url)})
+          .skip(PAGE_SIZE*query.page)
           .limit(PAGE_SIZE);
       } else {
         // Query Mongo
         var only = getFindCriteria('force',query);
         var fields = getFindFields('force',query);
-        force.find(only,fields,function(err,docs) {
-          if (!err) {
-            // Return Success & JSON Content-type
-            var length = docs.length;
-            writeMeta(self.res,200,url,length);
-
-            // Process results from Mongo
-            docs.forEach(function(e,i,a) {
-              //console.log(e,i,a);
-              self.res.write(JSON.stringify(e)+'\n');
-            });
-            self.res.end('\n');
-          } else {
-            getHandlerError(self.res,url);
-          }
-        });
+        force.find(only,fields,function(err,docs) {findHandler(err,docs,self.res, url)});
       }
     }
   }
