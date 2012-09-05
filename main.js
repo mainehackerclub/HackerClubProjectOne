@@ -47,6 +47,14 @@ var audit   = hcp1.collection('audit'),
     force   = hcp1.collection('force'),
     pulse   = hcp1.collection('pulse');
 
+function saveCallback(err, docs) {
+  if (!err) {
+    console.log('save succeeded',docs);
+  } else {
+    console.log('save failed',err);
+  }
+}
+
 app.use(flatiron.plugins.http);
 
 function validateEnv() {
@@ -125,7 +133,7 @@ function postHandler( url, body, res, coll) {
   merge(shlock,body);
   shlock.source = mUser;
   console.log(url,method,shlock);
-  coll.save(shlock);
+  coll.save(shlock,saveCallback);
 };
 
 // Handle Errors for GET API calls.
@@ -374,7 +382,7 @@ io.sockets.on('connection', function(socket) {
 
   socket.on('client', function (data) {
     data.source = mUser;
-    shlocks.save(data);
+    shlocks.save(data,saveCallback);
     console.log('client shlock:',data);
   });
   socket.on('point', function(data) {
@@ -382,7 +390,7 @@ io.sockets.on('connection', function(socket) {
     data.point = [data.coordX, data.coordY];
     socket.broadcast.emit('point',data);
     data.source = mUser;
-    force.save(data);
+    force.save(data,saveCallback);
   });
 });
 
