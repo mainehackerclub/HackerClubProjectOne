@@ -165,12 +165,36 @@ app.router.get('/audit',function() {
 });
 
 function getFindCriteria(coll,query) {
-  var criteria = '';
+  var criteria = {};
   switch (coll) {
     case 'force':
-      console.log('crtieria for find');
+      if (query.hasOwnProperty('source')) {
+        criteria.source = query.source;
+      };
+      if (query.hasOwnProperty('ip')) {
+        criteria.IP = query.ip;
+      };
       break;
   }
+  console.log('Find criteria: ',criteria);
+  return criteria;
+}
+
+function getFindFields(coll,query) {
+  var filter = {};
+  switch (coll) {
+    case 'force':
+      if (query.hasOwnProperty('fields')) {
+        filter.fields = query.fields.split(',')
+          .reduce(function(acc, item) {
+            acc[item] = 1;
+            return acc;
+          },{})
+      }
+      break;
+  }
+  console.log('Find fields: ',filter);
+  return filter;
 }
 
 function isQueryValid(query) {
@@ -220,21 +244,22 @@ app.router.get('/force',function() {
   var query = self.req.query;
   if (!isQueryValid(query)) {
     writeMeta(self.res,400,url,0);
-    // Finalize response.
     self.res.end('\n');
   } else {
     // Handle count=true
     if (query.hasOwnProperty('count') &&
         query.count === 'true') {
-      force.count(function(err,docs) {
+      var only   = getFindCriteria('force',query);
+      force.count(only,function(err,docs) {
         writeMeta(self.res,200,url,docs);
-        // Finalize response.
         self.res.end('\n');
       });
     } else {
       // Handle paging
       if (query.hasOwnProperty('page')) {
-        force.find(function(err,docs) {
+        var only = getFindCriteria('force',query);
+        var fields = getFindFields('force',query);
+        force.find(only,fields,function(err,docs) {
           var length = docs.length;
           writeMeta(self.res,200,url,length);
       
@@ -243,14 +268,14 @@ app.router.get('/force',function() {
             //console.log(e,i,a);
             self.res.write(JSON.stringify(e)+'\n');
           });
-      
-          // Finalize response.
           self.res.end('\n');
         }).skip(PAGE_SIZE*query.page)
           .limit(PAGE_SIZE);
       } else {
         // Query Mongo
-        force.find(function(err,docs) {
+        var only = getFindCriteria('force',query);
+        var fields = getFindFields('force',query);
+        force.find(only,fields,function(err,docs) {
           if (!err) {
             // Return Success & JSON Content-type
             var length = docs.length;
@@ -261,8 +286,6 @@ app.router.get('/force',function() {
               //console.log(e,i,a);
               self.res.write(JSON.stringify(e)+'\n');
             });
-      
-            // Finalize response.
             self.res.end('\n');
           } else {
             getHandlerError(self.res,url);
