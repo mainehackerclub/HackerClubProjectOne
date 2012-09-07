@@ -1,18 +1,20 @@
 {
-  "name": "HackerClubProjectOne",
-  "scripts": {
-    "start": "main.js"
-  },
-  "version": "0.0.1-13",
-  "engines": {
-    "node": "0.6.x"
-  },
-  "subdomain": "hackerclub",
+  "description": "Portfolio for experimentation with Flatiron",
+  "version": "0.0.0",
+  "private": true,
   "dependencies": {
-    "ecstatic": "0.1.x",
-    "union": "0.3.x",
-    "mongojs": "0.4.3",
-    "socket.io": "0.9.x",
-    "flatiron": "0.2.x"
-  }
+    "union": "0.3.0",
+    "flatiron": "0.2.8"
+  },
+  "devDependencies": {
+    "api-easy": "0.3.2",
+    "vows": "0.6.1"
+  },
+  "scripts": {
+    "test": "vows --spec",
+    "start": "node app.js"
+  },
+  "name": "HackerClubProjectOne",
+  "author": "Garrett Wilkin",
+  "homepage": "http://hackerclub.jit.su"
 }

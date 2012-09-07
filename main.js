@@ -8,35 +8,41 @@
  *
  */
 
-//Environment variables must be set.
-validateEnv();
-var mUser = process.env.MONGO_USER,
-    mPass = process.env.MONGO_PASS,
-    mHost = process.env.MONGO_HOST,
-    mPort = process.env.MONGO_PORT;
-
 var flatiron = require('flatiron'),
   app = flatiron.app,
   util = require('util'),
   union = require('union'),
   ecstatic = require('ecstatic');
 
+// Activate Flatiron plugins
+app.use(flatiron.plugins.http);
+app.use(flatiron.plugins.log);
+
+//Environment variables must be set.
+app.log.info('Validating Environment');
+validateEnv();
+var mUser = process.env.MONGO_USER,
+    mPass = process.env.MONGO_PASS,
+    mHost = process.env.MONGO_HOST,
+    mPort = process.env.MONGO_PORT;
+
+
 //Mongo connection
 var mUrl = 'mongodb://'+mHost+':'+mPort+'/hcp1';
-console.log('Mongo connection URL: ', mUrl);
+app.log.info('Mongo connection URL: ', mUrl);
 var hcp1 = require('mongojs').connect(mUrl);
 
 // Constants
 var JSONtype = { 'Content-Type': 'application/json' };
 var PAGE_SIZE = 20;
 
-console.log('attempt database authentication');
+app.log.info('Attempting database authentication');
 //Mongo authentication
 hcp1.authenticate(mUser,mPass,function(err, data) {
   if (!err) {
-    console.log('Database authentication successful.');
+    app.log.info('Database authentication successful.');
   } else {
-    console.log('Database authentication error.  Aborting now.');
+    app.log.error('Database authentication error.  Aborting now.');
     return process.exit(1);
   }
 });
@@ -49,47 +55,45 @@ var audit   = hcp1.collection('audit'),
 
 function saveCallback(err, docs) {
   if (!err) {
-    console.log('save succeeded',docs);
+    app.log.info('mongo collection save succeeded');
   } else {
-    console.log('save failed',err);
+    app.log.error('mongo collection save failed',err);
   }
 }
 
-app.use(flatiron.plugins.http);
 
 function validateEnv() {
   var fail = false;
   var v = {};
-  console.log('Validating Environment');
   if (!fail && process.env.MONGO_USER === undefined) {
     fail = true;
-    console.log('MONGO_USER undefined');
+    app.log.error('MONGO_USER undefined');
   } else {
     v.MONGO_USER = process.env.MONGO_USER;
   };
   if (!fail && process.env.MONGO_PASS === undefined) {
     fail = true;
-    console.log('MONGO_PASS undefined');
+    app.log.error('MONGO_PASS undefined');
   } else {
     v.MONGO_PASS = 'xxxxx';
   };
   if (!fail && process.env.MONGO_HOST === undefined) {
     fail = true;
-    console.log('MONGO_HOST undefined');
+    app.log.error('MONGO_HOST undefined');
   } else {
     v.MONGO_HOST = process.env.MONGO_HOST;
   };
   if (!fail && process.env.MONGO_PORT === undefined) {
     fail = true;
-    console.log('MONGO_PORT undefined');
+    app.log.error('MONGO_PORT undefined');
   } else {
     v.MONGO_PORT = process.env.MONGO_PORT;
   };
   if (fail) {
-    console.log(process.env);
+    app.log.error(process.env);
     return process.exit(1);
   } else {
-    console.log('Environment validated successfully\n',v);
+    app.log.info('Environment validated successfully\n',v);
   }
 };
 
@@ -127,7 +131,7 @@ function postHandler( url, body, res, coll) {
   var shlock = new Shlock('api', method, url);
   shlock.body = body;
   shlock.source = mUser;
-  console.log(url,method,shlock);
+  app.log.info(url,method,shlock);
   coll.save(shlock,saveCallback);
 };
 
@@ -150,7 +154,7 @@ function getFindCriteria(coll,query) {
       };
       break;
   }
-  console.log('Find criteria: ',criteria);
+  app.log.info('Mongo Collection find criteria: ',criteria);
   return criteria;
 }
 
@@ -167,15 +171,15 @@ function getFindFields(coll,query) {
       }
       break;
   }
-  console.log('Find fields: ',filter);
+  app.log.info('mongo collection find fields: ',filter);
   return filter;
 }
 
 function isQueryValid(query) {
   var valid = true;
-  console.log(query);
+  app.log.info(query);
   if (Object.keys(query).length == 0) {
-    console.log('query empty');
+    app.log.info('query empty');
   } else {
     // Check for page
     if (query.hasOwnProperty('page')) {
@@ -197,7 +201,11 @@ function isQueryValid(query) {
       }
     }
   }
-  console.log('isQueryValid: ',valid);
+  if (!valid) {
+    app.log.info('isQueryValid: ',valid);
+  } else {
+    app.log.warn('isQueryValid: ',valid);
+  }
   return valid;
 }
 
@@ -209,7 +217,6 @@ function findHandler(err, docs, res, url) {
 
     // Process results from Mongo
     docs.forEach(function(e,i,a) {
-      //console.log(e,i,a);
       delete e._id;
       res.write(JSON.stringify(e)+'\n');
     });
@@ -230,7 +237,7 @@ app.router.get('/audit',function() {
   // Create metrics data.
   var shlock = new Shlock('api', method, url);
   shlock.body = body;
-  console.log(url,method,shlock);
+  app.log.info(url,method,shlock);
 
   // Query Mongo
   audit.find(function(err,docs) {findHandler(err,docs,self.res, url)});
@@ -247,7 +254,7 @@ app.router.get('/force',function() {
   // Create metrics data.
   var shlock = new Shlock('api', method, url);
   shlock.body = body;
-  console.log(url,method,shlock);
+  app.log.info(url,method,shlock);
 
   // Check for query string
   var query = self.req.query;
@@ -291,27 +298,10 @@ app.router.get('/pulse',function() {
   // Create metrics data.
   var shlock = new Shlock('api', method, url);
   shlock.body = body;
-  console.log(url,method,shlock);
+  app.log.info(url,method,shlock);
 
   // Query Mongo
-  pulse.find(function(err,docs) {
-    if (!err) {
-      // Return Success & JSON Content-type
-      var length = docs.length;
-      writeMeta(self.res,200,url,length);
-
-      // Process results from Mongo
-      docs.forEach(function(e,i,a) {
-        console.log(e,i,a);
-        self.res.write(JSON.stringify(e)+'\n');
-      });
-
-      // Finalize response.
-      self.res.end('\n');
-    } else {
-      getHandlerError(res,url);
-    }
-  });
+  shlocks.find(function(err,docs) {findHandler(err,docs,self.res, url)});
 });
 
 app.router.get('/shlocks',function() {
@@ -324,30 +314,13 @@ app.router.get('/shlocks',function() {
   // Create metrics data.
   var shlock = new Shlock('api', method, url);
   shlock.body = body;
-  console.log(url,method,shlock);
+  app.log.info(url,method,shlock);
 
   // Query Mongo
-  shlocks.find(function(err,docs) {
-    if (!err) {
-      // Return Success & JSON Content-type
-      var length = docs.length;
-      writeMeta(self.res,200,url,length);
-
-      // Process results from Mongo
-      docs.forEach(function(e,i,a) {
-        console.log(e,i,a);
-        self.res.write(JSON.stringify(e)+'\n');
-      });
-
-      // Finalize response.
-      self.res.end('\n');
-    } else {
-      getHandlerError(res,url);
-    }
-  });
+  shlocks.find(function(err,docs) {findHandler(err,docs,self.res, url)});
 });
 
-console.log('Flatiron app: starting');
+app.log.info('Flatiron app: starting');
 app.http.before = [
   ecstatic('.')
 ];
@@ -360,10 +333,10 @@ io.sockets.on('connection', function(socket) {
   socket.on('client', function (data) {
     data.source = mUser;
     shlocks.save(data,saveCallback);
-    console.log('client shlock:',data);
+    app.log.info('client shlock:',data);
   });
   socket.on('point', function(data) {
-    console.log('point shlock: ',data);
+    app.log.info('point shlock: ',data);
     data.point = [data.coordX, data.coordY];
     socket.broadcast.emit('point',data);
     data.source = mUser;
@@ -393,4 +366,4 @@ app.router.post('/audit',function () {
   postHandler('/audit', body, self.res, audit);
 });
 
-console.log(app.router.routes);
+app.log.info(app.router.routes);
