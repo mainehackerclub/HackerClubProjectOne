@@ -14,21 +14,36 @@ var flatiron = require('flatiron'),
   union = require('union'),
   ecstatic = require('ecstatic');
 
+
+  app.config.use('env');
+  
 // Activate Flatiron plugins
 app.use(flatiron.plugins.http);
-app.use(flatiron.plugins.log);
+
 
 //Environment variables must be set.
-app.log.info('Validating Environment');
-validateEnv();
-var mUser = process.env.MONGO_USER,
-    mPass = process.env.MONGO_PASS,
-    mHost = process.env.MONGO_HOST,
-    mPort = process.env.MONGO_PORT;
+// app.log.info('Validating Environment');
+var v = validateEnv();
 
+
+// Configure Logging Plugin
+var logglyOpt =
+      {
+        subdomain:  v.LOGGLY_SUB_DOMAIN,
+        inputToken: v.LOGGLY_INPUT_TOKEN,
+        json:        true
+      };
+app.config.set('log',logglyOpt)
+app.options.log = app.config.get('log');
+console.log(app.options.log);
+app.use(flatiron.plugins.log);
+
+// Checking log setup
+console.log('after',app.config.get('log'));
+console.log('app.options.log',app.options.log);
 
 //Mongo connection
-var mUrl = 'mongodb://'+mHost+':'+mPort+'/hcp1';
+var mUrl = 'mongodb://'+v.MONGO_HOST+':'+v.MONGO_PORT+'/hcp1';
 app.log.info('Mongo connection URL: ', mUrl);
 var hcp1 = require('mongojs').connect(mUrl);
 
@@ -38,7 +53,7 @@ var PAGE_SIZE = 20;
 
 app.log.info('Attempting database authentication');
 //Mongo authentication
-hcp1.authenticate(mUser,mPass,function(err, data) {
+hcp1.authenticate(v.MONGO_USER,v.MONGO_PASS,function(err, data) {
   if (!err) {
     app.log.info('Database authentication successful.');
   } else {
@@ -65,36 +80,49 @@ function saveCallback(err, docs) {
 function validateEnv() {
   var fail = false;
   var v = {};
-  if (!fail && process.env.MONGO_USER === undefined) {
+  if (!fail && app.config.env().get('MONGO_USER') === undefined) {
     fail = true;
-    app.log.error('MONGO_USER undefined');
+//    app.log.error('MONGO_USER undefined');
   } else {
-    v.MONGO_USER = process.env.MONGO_USER;
+    v.MONGO_USER = app.config.get('MONGO_USER');
   };
-  if (!fail && process.env.MONGO_PASS === undefined) {
+  if (!fail && app.config.get('MONGO_PASS') === undefined) {
     fail = true;
-    app.log.error('MONGO_PASS undefined');
+//    app.log.error('MONGO_PASS undefined');
   } else {
     v.MONGO_PASS = 'xxxxx';
   };
-  if (!fail && process.env.MONGO_HOST === undefined) {
+  if (!fail && app.config.get('MONGO_HOST') === undefined) {
     fail = true;
-    app.log.error('MONGO_HOST undefined');
+//    app.log.error('MONGO_HOST undefined');
   } else {
-    v.MONGO_HOST = process.env.MONGO_HOST;
+    v.MONGO_HOST = app.config.get('MONGO_HOST');
   };
-  if (!fail && process.env.MONGO_PORT === undefined) {
+  if (!fail && app.config.get('MONGO_PORT') === undefined) {
     fail = true;
-    app.log.error('MONGO_PORT undefined');
+//    app.log.error('MONGO_PORT undefined');
   } else {
-    v.MONGO_PORT = process.env.MONGO_PORT;
+    v.MONGO_PORT = app.config.get('MONGO_PORT');
+  };
+  if (!fail && app.config.get('LOGGLY_INPUT_TOKEN') === undefined) {
+    fail = true;
+//    app.log.error('LOGGLY_INPUT_TOKEN undefined');
+  } else {
+    v.LOGGLY_INPUT_TOKEN = app.config.get('LOGGLY_INPUT_TOKEN');
+  };
+  if (!fail && app.config.get('LOGGLY_SUB_DOMAIN') === undefined) {
+    fail = true;
+//    app.log.error('LOGGLY_SUB_DOMAIN undefined');
+  } else {
+    v.LOGGLY_SUB_DOMAIN = app.config.get('LOGGLY_SUB_DOMAIN');
   };
   if (fail) {
-    app.log.error(process.env);
+//    app.log.error('Environment improperly defined',process.env);
     return process.exit(1);
   } else {
-    app.log.info('Environment validated successfully\n',v);
+//    app.log.info('Environment validated successfully\n',v);
   }
+  return v;
 };
 
 function Shlock(kind, method, url ) {
@@ -130,7 +158,7 @@ function postHandler( url, body, res, coll) {
   // Create metrics data.
   var shlock = new Shlock('api', method, url);
   shlock.body = body;
-  shlock.source = mUser;
+  shlock.source = v.MONGO_USER;
   app.log.info(url,method,shlock);
   coll.save(shlock,saveCallback);
 };
@@ -331,7 +359,7 @@ var io = require('socket.io').listen(app.server);
 io.sockets.on('connection', function(socket) {
 
   socket.on('client', function (data) {
-    data.source = mUser;
+    data.source = v.MONGO_USER;
     shlocks.save(data,saveCallback);
     app.log.info('client shlock:',data);
   });
@@ -339,7 +367,7 @@ io.sockets.on('connection', function(socket) {
     app.log.info('point shlock: ',data);
     data.point = [data.coordX, data.coordY];
     socket.broadcast.emit('point',data);
-    data.source = mUser;
+    data.source = v.MONGO_USER;
     force.save(data,saveCallback);
   });
 });
