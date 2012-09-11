@@ -38,7 +38,6 @@ var logglyOpt =
           password: v.LOGGLY_PASSWORD,
         }
       };
-console.log(util.inspect(logglyOpt));
 winston.add(winston.transports.Loggly,logglyOpt);
 
 //Mongo connection
@@ -412,4 +411,4 @@ app.router.post('/audit',function () {
   postHandler('/audit', body, self.res, audit);
 });
 
-winston.info(app.router.routes);
+winston.info('route',util.inspect(app.router.routes));
