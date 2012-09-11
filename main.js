@@ -16,15 +16,13 @@ var flatiron = require('flatiron'),
   ecstatic = require('ecstatic');
 
 // Add Loggly support
-require('winston-loggly'),
-
-// Set config module to read environment variables.
-app.config.use('env');
+require('winston-loggly');
   
 // Activate Flatiron plugins
 app.use(flatiron.plugins.http);
 
-// Environment variables must be set.
+// Set config module to read environment variables.
+app.config.use('env');
 var v = validateEnv();
 
 // Configure Loggly options
@@ -82,7 +80,7 @@ function validateEnv() {
   var envVariables = 
         ['MONGO_USER', 'MONGO_PASS','MONGO_HOST', 'MONGO_PORT',
          'LOGGLY_INPUT_TOKEN', 'LOGGLY_INPUT_NAME', 'LOGGLY_SUB_DOMAIN',
-         'LOGGLY_USERNAME', 'LOGGLY_PASSWORD'];
+         'LOGGLY_USERNAME', 'LOGGLY_PASSWORD', 'NODE_ENV'];
   for (i in envVariables) {
     var item = envVariables[i];
     winston.info('Reading env variable ',item);
@@ -329,10 +327,21 @@ winston.info('Flatiron app: starting');
 app.http.before = [
   ecstatic('.')
 ];
-app.start(80);
 
+// Nodejitsu prefers running on ports 8000+
+// They handle port redirection.
+
+var port;
+if (v.NODE_ENV === "NODEJITSU") {
+  port = 8080;
+} else {
+  port = 80;
+}
+winston.info('Running on port: ',port);
+app.start(port);
+
+// Realtime communication with the browser via socket.io.
 var io = require('socket.io').listen(app.server);
-
 io.sockets.on('connection', function(socket) {
 
   socket.on('client', function (data) {
