@@ -37,7 +37,7 @@ var logglyOpt =
         }
       };
 winston.add(winston.transports.Loggly,logglyOpt);
-
+winston.info('=================== STARTING APP =================');
 //Mongo connection
 var mUrl = 'mongodb://'+v.MONGO_HOST+':'+v.MONGO_PORT+'/hcp1';
 winston.info('Mongo connection URL: ', mUrl);
@@ -337,7 +337,7 @@ if (v.NODE_ENV === "NODEJITSU") {
 } else {
   port = 80;
 }
-winston.info('Running on port: ',port);
+winston.info('Running on port: '+port+' in NODE_ENV: '+ v.NODE_ENV );
 app.start(port);
 
 // Realtime communication with the browser via socket.io.
