@@ -79,59 +79,19 @@ function validateEnv() {
   winston.info('Validating Environment');
   var fail = false;
   var v = {};
-  if (!fail && app.config.env().get('MONGO_USER') === undefined) {
-    fail = true;
-    winston.error('MONGO_USER undefined');
-  } else {
-    v.MONGO_USER = app.config.get('MONGO_USER');
-  };
-  if (!fail && app.config.get('MONGO_PASS') === undefined) {
-    fail = true;
-    winston.error('MONGO_PASS undefined');
-  } else {
-    v.MONGO_PASS = app.config.get('MONGO_PASS');
-  };
-  if (!fail && app.config.get('MONGO_HOST') === undefined) {
-    fail = true;
-    winston.error('MONGO_HOST undefined');
-  } else {
-    v.MONGO_HOST = app.config.get('MONGO_HOST');
-  };
-  if (!fail && app.config.get('MONGO_PORT') === undefined) {
-    fail = true;
-    winston.error('MONGO_PORT undefined');
-  } else {
-    v.MONGO_PORT = app.config.get('MONGO_PORT');
-  };
-  if (!fail && app.config.get('LOGGLY_INPUT_TOKEN') === undefined) {
-    fail = true;
-    winston.error('LOGGLY_INPUT_TOKEN undefined');
-  } else {
-    v.LOGGLY_INPUT_TOKEN = app.config.get('LOGGLY_INPUT_TOKEN');
-  };
-  if (!fail && app.config.get('LOGGLY_INPUT_NAME') === undefined) {
-    fail = true;
-    winston.error('LOGGLY_INPUT_NAME undefined');
-  } else {
-    v.LOGGLY_INPUT_NAME = app.config.get('LOGGLY_INPUT_NAME');
-  };
-  if (!fail && app.config.get('LOGGLY_SUB_DOMAIN') === undefined) {
-    fail = true;
-    winston.error('LOGGLY_SUB_DOMAIN undefined');
-  } else {
-    v.LOGGLY_SUB_DOMAIN = app.config.get('LOGGLY_SUB_DOMAIN');
-  };
-  if (!fail && app.config.get('LOGGLY_USERNAME') === undefined) {
-    fail = true;
-    winston.error('LOGGLY_USERNAME undefined');
-  } else {
-    v.LOGGLY_USERNAME = app.config.get('LOGGLY_USERNAME');
-  };
-  if (!fail && app.config.get('LOGGLY_PASSWORD') === undefined) {
-    fail = true;
-    winston.error('LOGGLY_PASSWORD undefined');
-  } else {
-    v.LOGGLY_PASSWORD = app.config.get('LOGGLY_PASSWORD');
+  var envVariables = 
+        ['MONGO_USER', 'MONGO_PASS','MONGO_HOST', 'MONGO_PORT',
+         'LOGGLY_INPUT_TOKEN', 'LOGGLY_INPUT_NAME', 'LOGGLY_SUB_DOMAIN',
+         'LOGGLY_USERNAME', 'LOGGLY_PASSWORD'];
+  for (i in envVariables) {
+    var item = envVariables[i];
+    winston.info('Reading env variable ',item);
+    if (!fail && app.config.env().get(item) === undefined) {
+      fail = true;
+      winston.error(item,' undefined');
+    } else {
+      v[item] = app.config.get(item);
+    };
   };
   if (fail) {
     winston.error('Environment improperly defined',process.env);
