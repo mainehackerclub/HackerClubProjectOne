@@ -3,7 +3,7 @@
   "scripts": {
     "start": "main.js"
   },
-  "version": "0.0.1-18",
+  "version": "0.0.1-19",
   "engines": {
     "node": "0.6.x"
   },
@@ -13,6 +13,8 @@
     "union": "0.3.x",
     "mongojs": "0.4.3",
     "socket.io": "0.9.x",
-    "flatiron": "0.2.x"
+    "flatiron": "0.2.x",
+    "winston-loggly": "0.6.x",
+    "winston": "0.6.x"
   }
 }

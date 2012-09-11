@@ -12,52 +12,51 @@ var flatiron = require('flatiron'),
   app = flatiron.app,
   util = require('util'),
   union = require('union'),
+  winston = require('winston'),
   ecstatic = require('ecstatic');
 
+// Add Loggly support
+require('winston-loggly'),
 
-  app.config.use('env');
+// Set config module to read environment variables.
+app.config.use('env');
   
 // Activate Flatiron plugins
 app.use(flatiron.plugins.http);
 
-
-//Environment variables must be set.
-// app.log.info('Validating Environment');
+// Environment variables must be set.
 var v = validateEnv();
 
-
-// Configure Logging Plugin
+// Configure Loggly options
 var logglyOpt =
       {
         subdomain:  v.LOGGLY_SUB_DOMAIN,
         inputToken: v.LOGGLY_INPUT_TOKEN,
-        json:        true
+        inputName:  v.LOGGLY_INPUT_NAME,
+        auth: {
+          username: v.LOGGLY_USERNAME,
+          password: v.LOGGLY_PASSWORD,
+        }
       };
-app.config.set('log',logglyOpt)
-app.options.log = app.config.get('log');
-console.log(app.options.log);
-app.use(flatiron.plugins.log);
-
-// Checking log setup
-console.log('after',app.config.get('log'));
-console.log('app.options.log',app.options.log);
+console.log(util.inspect(logglyOpt));
+winston.add(winston.transports.Loggly,logglyOpt);
 
 //Mongo connection
 var mUrl = 'mongodb://'+v.MONGO_HOST+':'+v.MONGO_PORT+'/hcp1';
-app.log.info('Mongo connection URL: ', mUrl);
+winston.info('Mongo connection URL: ', mUrl);
 var hcp1 = require('mongojs').connect(mUrl);
 
 // Constants
 var JSONtype = { 'Content-Type': 'application/json' };
 var PAGE_SIZE = 20;
 
-app.log.info('Attempting database authentication');
+winston.info('Attempting database authentication');
 //Mongo authentication
 hcp1.authenticate(v.MONGO_USER,v.MONGO_PASS,function(err, data) {
   if (!err) {
-    app.log.info('Database authentication successful.');
+    winston.info('Database authentication successful.');
   } else {
-    app.log.error('Database authentication error.  Aborting now.');
+    winston.info('Database authentication error.  Aborting now.');
     return process.exit(1);
   }
 });
@@ -70,57 +69,76 @@ var audit   = hcp1.collection('audit'),
 
 function saveCallback(err, docs) {
   if (!err) {
-    app.log.info('mongo collection save succeeded');
+    winston.info('mongo collection save succeeded');
   } else {
-    app.log.error('mongo collection save failed',err);
+    winston.info('mongo collection save failed',err);
   }
 }
 
 
 function validateEnv() {
+  winston.info('Validating Environment');
   var fail = false;
   var v = {};
   if (!fail && app.config.env().get('MONGO_USER') === undefined) {
     fail = true;
-//    app.log.error('MONGO_USER undefined');
+    winston.error('MONGO_USER undefined');
   } else {
     v.MONGO_USER = app.config.get('MONGO_USER');
   };
   if (!fail && app.config.get('MONGO_PASS') === undefined) {
     fail = true;
-//    app.log.error('MONGO_PASS undefined');
+    winston.error('MONGO_PASS undefined');
   } else {
-    v.MONGO_PASS = 'xxxxx';
+    v.MONGO_PASS = app.config.get('MONGO_PASS');
   };
   if (!fail && app.config.get('MONGO_HOST') === undefined) {
     fail = true;
-//    app.log.error('MONGO_HOST undefined');
+    winston.error('MONGO_HOST undefined');
   } else {
     v.MONGO_HOST = app.config.get('MONGO_HOST');
   };
   if (!fail && app.config.get('MONGO_PORT') === undefined) {
     fail = true;
-//    app.log.error('MONGO_PORT undefined');
+    winston.error('MONGO_PORT undefined');
   } else {
     v.MONGO_PORT = app.config.get('MONGO_PORT');
   };
   if (!fail && app.config.get('LOGGLY_INPUT_TOKEN') === undefined) {
     fail = true;
-//    app.log.error('LOGGLY_INPUT_TOKEN undefined');
+    winston.error('LOGGLY_INPUT_TOKEN undefined');
   } else {
     v.LOGGLY_INPUT_TOKEN = app.config.get('LOGGLY_INPUT_TOKEN');
   };
+  if (!fail && app.config.get('LOGGLY_INPUT_NAME') === undefined) {
+    fail = true;
+    winston.error('LOGGLY_INPUT_NAME undefined');
+  } else {
+    v.LOGGLY_INPUT_NAME = app.config.get('LOGGLY_INPUT_NAME');
+  };
   if (!fail && app.config.get('LOGGLY_SUB_DOMAIN') === undefined) {
     fail = true;
-//    app.log.error('LOGGLY_SUB_DOMAIN undefined');
+    winston.error('LOGGLY_SUB_DOMAIN undefined');
   } else {
     v.LOGGLY_SUB_DOMAIN = app.config.get('LOGGLY_SUB_DOMAIN');
   };
+  if (!fail && app.config.get('LOGGLY_USERNAME') === undefined) {
+    fail = true;
+    winston.error('LOGGLY_USERNAME undefined');
+  } else {
+    v.LOGGLY_USERNAME = app.config.get('LOGGLY_USERNAME');
+  };
+  if (!fail && app.config.get('LOGGLY_PASSWORD') === undefined) {
+    fail = true;
+    winston.error('LOGGLY_PASSWORD undefined');
+  } else {
+    v.LOGGLY_PASSWORD = app.config.get('LOGGLY_PASSWORD');
+  };
   if (fail) {
-//    app.log.error('Environment improperly defined',process.env);
+    winston.error('Environment improperly defined',process.env);
     return process.exit(1);
   } else {
-//    app.log.info('Environment validated successfully\n',v);
+    winston.info('Environment validated successfully\n',v);
   }
   return v;
 };
@@ -159,7 +177,7 @@ function postHandler( url, body, res, coll) {
   var shlock = new Shlock('api', method, url);
   shlock.body = body;
   shlock.source = v.MONGO_USER;
-  app.log.info(url,method,shlock);
+  winston.info(url,method,shlock);
   coll.save(shlock,saveCallback);
 };
 
@@ -182,7 +200,7 @@ function getFindCriteria(coll,query) {
       };
       break;
   }
-  app.log.info('Mongo Collection find criteria: ',criteria);
+  winston.info('Mongo Collection find criteria: ',criteria);
   return criteria;
 }
 
@@ -199,15 +217,15 @@ function getFindFields(coll,query) {
       }
       break;
   }
-  app.log.info('mongo collection find fields: ',filter);
+  winston.info('mongo collection find fields: ',filter);
   return filter;
 }
 
 function isQueryValid(query) {
   var valid = true;
-  app.log.info(query);
+  winston.info(query);
   if (Object.keys(query).length == 0) {
-    app.log.info('query empty');
+    winston.info('query empty');
   } else {
     // Check for page
     if (query.hasOwnProperty('page')) {
@@ -230,9 +248,9 @@ function isQueryValid(query) {
     }
   }
   if (!valid) {
-    app.log.info('isQueryValid: ',valid);
+    winston.info('isQueryValid: ',valid);
   } else {
-    app.log.warn('isQueryValid: ',valid);
+    winston.info.warn('isQueryValid: ',valid);
   }
   return valid;
 }
@@ -265,7 +283,7 @@ app.router.get('/audit',function() {
   // Create metrics data.
   var shlock = new Shlock('api', method, url);
   shlock.body = body;
-  app.log.info(url,method,shlock);
+  winston.info(url,method,shlock);
 
   // Query Mongo
   audit.find(function(err,docs) {findHandler(err,docs,self.res, url)});
@@ -282,7 +300,7 @@ app.router.get('/force',function() {
   // Create metrics data.
   var shlock = new Shlock('api', method, url);
   shlock.body = body;
-  app.log.info(url,method,shlock);
+  winston.info(url,method,shlock);
 
   // Check for query string
   var query = self.req.query;
@@ -326,7 +344,7 @@ app.router.get('/pulse',function() {
   // Create metrics data.
   var shlock = new Shlock('api', method, url);
   shlock.body = body;
-  app.log.info(url,method,shlock);
+  winston.info(url,method,shlock);
 
   // Query Mongo
   shlocks.find(function(err,docs) {findHandler(err,docs,self.res, url)});
@@ -342,13 +360,13 @@ app.router.get('/shlocks',function() {
   // Create metrics data.
   var shlock = new Shlock('api', method, url);
   shlock.body = body;
-  app.log.info(url,method,shlock);
+  winston.info(url,method,shlock);
 
   // Query Mongo
   shlocks.find(function(err,docs) {findHandler(err,docs,self.res, url)});
 });
 
-app.log.info('Flatiron app: starting');
+winston.info('Flatiron app: starting');
 app.http.before = [
   ecstatic('.')
 ];
@@ -361,10 +379,10 @@ io.sockets.on('connection', function(socket) {
   socket.on('client', function (data) {
     data.source = v.MONGO_USER;
     shlocks.save(data,saveCallback);
-    app.log.info('client shlock:',data);
+    winston.info('client shlock:',data);
   });
   socket.on('point', function(data) {
-    app.log.info('point shlock: ',data);
+    winston.info('point shlock: ',data);
     data.point = [data.coordX, data.coordY];
     socket.broadcast.emit('point',data);
     data.source = v.MONGO_USER;
@@ -394,4 +412,4 @@ app.router.post('/audit',function () {
   postHandler('/audit', body, self.res, audit);
 });
 
-app.log.info(app.router.routes);
+winston.info(app.router.routes);
