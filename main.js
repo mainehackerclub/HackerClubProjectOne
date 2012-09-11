@@ -70,7 +70,7 @@ function saveCallback(err, docs) {
   if (!err) {
     winston.info('mongo collection save succeeded');
   } else {
-    winston.info('mongo collection save failed',err);
+    winston.error('mongo collection save failed',err);
   }
 }
 
@@ -97,7 +97,7 @@ function validateEnv() {
     winston.error('Environment improperly defined',process.env);
     return process.exit(1);
   } else {
-    winston.info('Environment validated successfully\n',v);
+    winston.info('Environment validated successfully');
   }
   return v;
 };
