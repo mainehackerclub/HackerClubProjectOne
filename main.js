@@ -77,7 +77,6 @@ var audit   = hcp1.collection('audit'),
 //
 function saveCallback(err, docs) {
   if (!err) {
-    winston.info('mongo collection save succeeded');
   } else {
     winston.error('mongo collection save failed',err);
   }
@@ -128,6 +127,7 @@ function connectHandler(source) {
   var s = new Shlock('socket.io','connect','unknown');
   s.source = source;
   s.system = v.MONGO_USER;
+  winston.info(util.inspect(app.server.connections));
   winston.info(util.inspect(s));
   shlocks.save(s);
 }
@@ -420,6 +420,14 @@ io.sockets.on('connection', function(socket) {
     data.source = 'socket.io.client';
     force.save(data,saveCallback);
   });
+  setInterval(
+    function() {
+      winston.info('setInterval test');
+      var data = {};
+      data.connections = app.server.connections;
+      data.sockets = io.sockets.clients().length;
+      socket.broadcast.emit('load',data);
+    },1000);
 });
 
 io.sockets.on('disconnect', function(socket) {
