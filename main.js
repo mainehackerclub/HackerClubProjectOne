@@ -120,8 +120,26 @@ function Shlock(kind, method, url ) {
   this.kind = kind;
   this.method = method;
   this.url = url;
-  this.milliseconds = new Date().getTime();
+  this.time = new Date().toJSON();
 };
+
+// Socket.io server disconnect event handler
+function connectHandler(source) {
+  var s = new Shlock('socket.io','connect','unknown');
+  s.source = source;
+  s.system = v.MONGO_USER;
+  winston.info(util.inspect(s));
+  shlocks.save(s);
+}
+
+// Socket.io server disconnect event handler
+function disconnectHandler(source) {
+  var s = new Shlock('socket.io','disconnect','unknown');
+  s.source = source;
+  s.system = v.MONGO_USER;
+  winston.info(util.inspect(s));
+  shlocks.save(s);
+}
 
 // Object used to hold common API related information.
 //
@@ -153,8 +171,8 @@ function postHandler( url, body, res, coll) {
   // Create metrics data.
   var shlock = new Shlock('api', method, url);
   shlock.body = body;
-  shlock.source = v.MONGO_USER;
-  winston.info(url,method,shlock);
+  shlock.system = v.MONGO_USER;
+  winston.info(util.inspect(shlock));
   coll.save(shlock,saveCallback);
 };
 
@@ -180,7 +198,7 @@ function getFindCriteria(coll,query) {
       };
       break;
   }
-  winston.info('Mongo Collection find criteria: ',criteria);
+  winston.info('find criteria: ',util.inspect(criteria));
   return criteria;
 }
 
@@ -199,7 +217,7 @@ function getFindFields(coll,query) {
       }
       break;
   }
-  winston.info('mongo collection find fields: ',filter);
+  winston.info('mongo collection find fields: ',util.inspect(filter));
   return filter;
 }
 
@@ -208,9 +226,9 @@ function getFindFields(coll,query) {
 //
 function isQueryValid(query) {
   var valid = true;
-  winston.info(query);
+  winston.info('query: ',util.inspect(query));
   if (Object.keys(query).length == 0) {
-    winston.info('query empty');
+    // No query, RELAX!
   } else {
     // Check for page
     if (query.hasOwnProperty('page')) {
@@ -226,16 +244,16 @@ function isQueryValid(query) {
       }
     }
     // Check for filter
-    if (query.hasOwnProperty('filter')) {
+    if (query.hasOwnProperty('fields')) {
       if (!isNaN(query.filter)) {
         valid = false;
       }
     }
   }
   if (!valid) {
-    winston.info('isQueryValid: ',valid);
+    winston.warn('isQueryValid: ',valid);
   } else {
-    winston.info.warn('isQueryValid: ',valid);
+    winston.info('isQueryValid: ',valid);
   }
   return valid;
 }
@@ -271,7 +289,7 @@ app.router.get('/audit',function() {
   // Create metrics data.
   var shlock = new Shlock('api', method, url);
   shlock.body = body;
-  winston.info(url,method,shlock);
+  winston.info(util.inspect(shlock));
 
   // Query Mongo
   audit.find(function(err,docs) {findHandler(err,docs,self.res, url)});
@@ -289,7 +307,7 @@ app.router.get('/force',function() {
   // Create metrics data.
   var shlock = new Shlock('api', method, url);
   shlock.body = body;
-  winston.info(url,method,shlock);
+  winston.info(util.inspect(shlock));
 
   // Check for query string
   var query = self.req.query;
@@ -334,7 +352,7 @@ app.router.get('/pulse',function() {
   // Create metrics data.
   var shlock = new Shlock('api', method, url);
   shlock.body = body;
-  winston.info(url,method,shlock);
+  winston.info(util.inspect(shlock));
 
   // Query Mongo
   shlocks.find(function(err,docs) {findHandler(err,docs,self.res, url)});
@@ -351,7 +369,7 @@ app.router.get('/shlocks',function() {
   // Create metrics data.
   var shlock = new Shlock('api', method, url);
   shlock.body = body;
-  winston.info(url,method,shlock);
+  winston.info(util.inspect(shlock));
 
   // Query Mongo
   shlocks.find(function(err,docs) {findHandler(err,docs,self.res, url)});
@@ -380,19 +398,32 @@ app.start(port);
 //
 var io = require('socket.io').listen(app.server);
 io.sockets.on('connection', function(socket) {
+  connectHandler('socket.io.server');
 
+  socket.on('connect', function() {
+    connectHandler('socket.io.client');
+  });
+  socket.on('disconnect', function() {
+    disconnectHandler('socket.io.client');
+  });
   socket.on('client', function (data) {
-    data.source = v.MONGO_USER;
+    data.system = v.MONGO_USER;
+    data.source = 'socket.io.client';
     shlocks.save(data,saveCallback);
-    winston.info('client shlock:',data);
+    winston.info(util.inspect(data));
   });
   socket.on('point', function(data) {
-    winston.info('point shlock: ',data);
+    winston.info(util.inspect(data));
     data.point = [data.coordX, data.coordY];
     socket.broadcast.emit('point',data);
-    data.source = v.MONGO_USER;
+    data.system = v.MONGO_USER;
+    data.source = 'socket.io.client';
     force.save(data,saveCallback);
   });
+});
+
+io.sockets.on('disconnect', function(socket) {
+  disconnectHandler('socket.io.server');
 });
 
 function Circle(r, fill) {
