@@ -440,7 +440,7 @@ function randomColor() {
 
 // Returns a random radius
 function randomR() {
-  return Math.floor(Math.random()*4.5+4.5);
+  return Math.floor(Math.random()*20+4.5);
 }
 
 var io = require('socket.io').listen(app.server);

@@ -55,22 +55,22 @@
     </script>
     <style type="text/css">
 
-rect {
-  fill: #fff;
-}
+      rect {
+        fill: #fff;
+      }
 
-.node {
-}
+      .node {
+      }
 
-.cursor {
-  fill: none;
-  stroke: brown;
-  pointer-events: none;
-}
+      .cursor {
+        fill: none;
+        stroke: brown;
+        pointer-events: none;
+      }
 
-.link {
-  stroke: #999;
-}
+      .link {
+        stroke: #999;
+      }
 
     </style>
   </head>
@@ -84,16 +84,14 @@ rect {
     <p>
     Instructions:
     <ol>
-      <li> Get a friend to come to this site too.</li>
-      <li> Both of you start clicking around in the white box. </li>
-      <li> watch the dots appear on your screen.</li>
-      <li> when you click, your friend sees it too.</li>
-      <li> Note that you can also try this with two different browser windows or for your smartphone and your laptop.</li>
+      <li> Get a friend to come to this site too, or load this page in another tab or window.</li>
+      <li> Start clicking around in the white box. </li>
+      <li> Watch the dots appear on your screen.</li>
+      <li> When you click, this event is broadcasted to all other broswer windows.</li>
     </ol>
     <div >
       <h3>
-      Sockets: <span class='sockets'>0</span><br>
-      Connections: <span class='connections'>0</span>
+      Active Users: <span class='sockets'>0</span><br>
       </h3>
     </div>
     <div id="chart"></div>
@@ -108,8 +106,8 @@ rect {
     <script type="text/javascript">
 
 //D3.js Force layout intialization.
-var width = 960,
-    height = 500,
+var width = 640,
+    height = 480,
     fill = d3.scale.category20(),
     nodes = [],
     links = [];
@@ -139,9 +137,9 @@ socket.on('nodeAttr',function(data) {
   localR = data.r;
 });
 
-// 
+// This is firing too often.
 socket.on('load',function(data) {
-  console.log(data);
+  //console.log('load ',data);
   $('.sockets').text(data.sockets)
   $('.connections').text(data.connections)
 });
@@ -155,6 +153,23 @@ var force = d3.layout.force()
     .distance(30)
     .nodes(nodes)
     .links(links)
+    .charge(function(node) {
+              var charge = -30,
+                  pq = 200,
+                  max = 600;
+              if (node.r < 10) {
+                pq = node.r * node.r;
+              } else {
+                pq = node.r * 15;
+              }
+              if (pq > max) {
+                charge = -1 * max;
+              } else {
+                charge = pq * -1;
+              }
+              console.log('force.charge ',node.r,charge );
+              return charge;
+            })
     .size([width, height]);
 
 var cursor = vis.append("circle")
@@ -181,7 +196,6 @@ vis.on("mousemove", function() {
 
 function linkPoint(node) {
   // add links to any nearby nodes
-  //console.log('linkPoint ',node);
   nodes.forEach(function(target) {
     var x = target.x - node.x,
         y = target.y - node.y;
@@ -193,7 +207,12 @@ function linkPoint(node) {
 
 function mousePoint(vis) {
   var point = d3.mouse(vis),
-      node = {x: point[0], y: point[1], source:"mouse"},
+      node = {
+        x: point[0],
+        y: point[1],
+        fill: localColor,
+        r: localR,
+        source:"mouse"},
       n = nodes.push(node);
   linkPoint(node);
   return point;
