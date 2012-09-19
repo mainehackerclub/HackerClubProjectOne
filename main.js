@@ -426,37 +426,63 @@ function disconnectHandler(source) {
   shlocks.save(s);
 }
 
+// Returns a color object with randomly generated color;
+function randomColor() {
+  var color = Color();
+  var temp =  Math.floor(Math.random()*255);
+  color.red(temp);
+  temp =  Math.floor(Math.random()*255);
+  color.green(temp);
+  temp =  Math.floor(Math.random()*255);
+  color.blue(temp);
+  return color;
+}
+
 var io = require('socket.io').listen(app.server);
 io.sockets.on('connection', function(socket) {
+
   connectHandler('socket.io.server');
 
-  socket.on('connect', function() {
-    connectHandler('socket.io.client');
+  // Establishing random color for this client.
+  var color = randomColor();
+  socket.set('color',color, function(color) {
+   winston.info(util.inspect(color));
   });
+
+  socket.emit('color',color);
+  winston.info(color.hexString());
+
   socket.on('disconnect', function() {
     disconnectHandler('socket.io.client');
   });
+  
   socket.on('client', function (data) {
     data.system = v.MONGO_USER;
     data.source = 'socket.io.client';
     shlocks.save(data,saveCallback);
     winston.info(util.inspect(data));
   });
+  
   socket.on('point', function(data) {
     winston.info(util.inspect(data));
     data.point = [data.coordX, data.coordY];
+    socket.get('color',function(err,color) {
+      data.color = color;
+    });
     socket.broadcast.emit('point',data);
     data.system = v.MONGO_USER;
     data.source = 'socket.io.client';
     force.save(data,saveCallback);
   });
+
   setInterval(
     function() {
       var data = {};
       data.connections = app.server.connections;
       data.sockets = io.sockets.clients().length;
       socket.broadcast.emit('load',data);
-    },1000);
+    },2000);
+
 });
 
 io.sockets.on('disconnect', function(socket) {

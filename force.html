@@ -121,10 +121,20 @@ var vis = d3.select("#chart").append("svg")
       //Custom dispatcher.
       var socketDispatch = d3.dispatch("point");
       socketDispatch.on("point",socketPoint);
+
+
+      // Register for point events.
       socket.on('point',function(data) {
+        console.log('point ',data);
         socketDispatch.point(data);
       });
 
+      // Register for color events.
+      socket.on('color',function(data) {
+        console.log('color ',data);
+      });
+
+       // 
        socket.on('load',function(data) {
            console.log(data);
            $('.sockets').text(data.sockets)
