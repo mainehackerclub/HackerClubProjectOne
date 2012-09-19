@@ -114,32 +114,35 @@ var width = 960,
     nodes = [],
     links = [];
 
+// Global viz variables;
+var localColor;
+
 var vis = d3.select("#chart").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-      //Custom dispatcher.
-      var socketDispatch = d3.dispatch("point");
-      socketDispatch.on("point",socketPoint);
+//Custom dispatcher for socket.io events.
+var socketDispatch = d3.dispatch("point");
+socketDispatch.on("point",socketPoint);
 
+// Register for point events.
+socket.on('point',function(data) {
+  console.log('point ',data);
+  socketDispatch.point(data);
+});
 
-      // Register for point events.
-      socket.on('point',function(data) {
-        console.log('point ',data);
-        socketDispatch.point(data);
-      });
+// Register for color events.
+socket.on('color',function(data) {
+  console.log('color ',data);
+  localColor = data;
+});
 
-      // Register for color events.
-      socket.on('color',function(data) {
-        console.log('color ',data);
-      });
-
-       // 
-       socket.on('load',function(data) {
-           console.log(data);
-           $('.sockets').text(data.sockets)
-           $('.connections').text(data.connections)
-       });
+// 
+socket.on('load',function(data) {
+  console.log(data);
+  $('.sockets').text(data.sockets)
+  $('.connections').text(data.connections)
+});
 
 // Continuted D3.js Force layout setup.
 vis.append("rect")
@@ -156,7 +159,6 @@ var cursor = vis.append("circle")
     .attr("r", 30)
     .attr("transform", "translate(-100,-100)")
     .attr("class", "cursor");
-
 
 
 force.on("tick", function() {
@@ -198,7 +200,11 @@ function mousePoint(vis) {
 function socketPoint(data) {
   console.log('socketPoint: ',data);
   var point = data.point,
-      node = {x: point[0], y: point[1], source:"socket"},
+      node = { 
+        x: point[0], 
+        y: point[1], 
+        fill: data.color,
+        source:"socket"};
       n = nodes.push(node);
   linkPoint(node);
   restart();
@@ -224,7 +230,7 @@ function setStroke (node) {
   if (node.source=="mouse") {
     color = "black";
   } else {
-    color = "red";
+    color = "black";
   }
   return color;
 }
@@ -233,9 +239,9 @@ function setStroke (node) {
 function setFill (node) {
   var color = "";
   if (node.source=="mouse") {
-    color = "red";
+    color = localColor;
   } else {
-    color = "black";
+    color = node.fill;
   }
   return color;
 }

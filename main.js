@@ -445,11 +445,11 @@ io.sockets.on('connection', function(socket) {
 
   // Establishing random color for this client.
   var color = randomColor();
-  socket.set('color',color, function(color) {
+  socket.set('color',color.hexString(), function(color) {
    winston.info(util.inspect(color));
   });
 
-  socket.emit('color',color);
+  socket.emit('color',color.hexString());
   winston.info(color.hexString());
 
   socket.on('disconnect', function() {
