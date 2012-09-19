@@ -177,9 +177,10 @@ var force = d3.layout.force()
     .linkDistance(function(link) {
       var r1 = link.source.r,
           r2 = link.target.r,
+          min = 15;
           distance = (r1 + r2) * 2;
-      if (distance < 20) {
-        distance = 20;
+      if (distance < min) {
+        distance = min;
       }
       console.log('radius link', r1, r2,distance);
       return distance;
@@ -206,8 +207,14 @@ function linkPoint(node) {
   // add links to any nearby nodes
   nodes.forEach(function(target) {
     var x = target.x - node.x,
-        y = target.y - node.y;
-    if (Math.sqrt(x * x + y * y) < 30) {
+        y = target.y - node.y,
+        threshold;
+    if (target.r < node.r) {
+      threshold = node.r * 2.75 ;
+    } else {
+      threshold = target.r * 2.75;
+    }
+    if (Math.sqrt(x * x + y * y) < threshold ) {
       links.push({source: node, target: target});
     }
   });
