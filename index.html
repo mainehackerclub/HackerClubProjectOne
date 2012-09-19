@@ -25,13 +25,6 @@
       this.time = new Date().toJSON();
     };
 
-    Shlock.prototype.toString = function() {
-      var self = this;
-      var ms = self.milliseconds;
-      var d = new Date().setTime(ms);
-      return self.kind+' '+self.mmethod+' '+self.url+' '+d;
-    }
-
     // Tracking IP of visitors, logging time as well.
     function Client(IP, ID) {
       this.IP = IP;
