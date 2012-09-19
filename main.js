@@ -438,6 +438,11 @@ function randomColor() {
   return color;
 }
 
+// Returns a random radius
+function randomR() {
+  return Math.floor(Math.random()*4.5+4.5);
+}
+
 var io = require('socket.io').listen(app.server);
 io.sockets.on('connection', function(socket) {
 
@@ -445,12 +450,19 @@ io.sockets.on('connection', function(socket) {
 
   // Establishing random color for this client.
   var color = randomColor();
+  var r = randomR();
   socket.set('color',color.hexString(), function(color) {
    winston.info(util.inspect(color));
   });
+  socket.set('r',r, function(r) {
+   winston.info(util.inspect(r));
+  });
 
-  socket.emit('color',color.hexString());
-  winston.info(color.hexString());
+  var attrs = {};
+  attrs.color = color.hexString();
+  attrs.r = r;
+  socket.emit('nodeAttr',attrs);
+  winston.info(util.inspect(attrs));
 
   socket.on('disconnect', function() {
     disconnectHandler('socket.io.client');
@@ -469,6 +481,9 @@ io.sockets.on('connection', function(socket) {
     socket.get('color',function(err,color) {
       data.color = color;
     });
+    socket.get('r',function(err,r) {
+      data.r = r;
+    });
     socket.broadcast.emit('point',data);
     data.system = v.MONGO_USER;
     data.source = 'socket.io.client';
@@ -481,7 +496,7 @@ io.sockets.on('connection', function(socket) {
       data.connections = app.server.connections;
       data.sockets = io.sockets.clients().length;
       socket.broadcast.emit('load',data);
-    },2000);
+    },5000);
 
 });
 
