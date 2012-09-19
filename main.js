@@ -11,8 +11,9 @@
 
 var flatiron = require('flatiron'),
   app = flatiron.app,
-  util = require('util'),
   union = require('union'),
+  Color  = require('color'),
+  util = require('util'),
   winston = require('winston'),
   ecstatic = require('ecstatic');
 
@@ -121,25 +122,6 @@ function Shlock(kind, method, url ) {
   this.url = url;
   this.time = new Date().toJSON();
 };
-
-// Socket.io server disconnect event handler
-function connectHandler(source) {
-  var s = new Shlock('socket.io','connect','unknown');
-  s.source = source;
-  s.system = v.MONGO_USER;
-  winston.info(util.inspect(app.server.connections));
-  winston.info(util.inspect(s));
-  shlocks.save(s);
-}
-
-// Socket.io server disconnect event handler
-function disconnectHandler(source) {
-  var s = new Shlock('socket.io','disconnect','unknown');
-  s.source = source;
-  s.system = v.MONGO_USER;
-  winston.info(util.inspect(s));
-  shlocks.save(s);
-}
 
 // Object used to hold common API related information.
 //
@@ -278,7 +260,6 @@ function findHandler(err, docs, res, url) {
 }
 
 // API ENDPOINT 
-// GET AUDIT
 app.router.get('/audit',function() {
   // Setup
   var self = this;
@@ -296,7 +277,6 @@ app.router.get('/audit',function() {
 });
 
 // API ENDPOINT 
-// GET FORCE
 app.router.get('/force',function() {
   // Setup
   var self = this;
@@ -394,8 +374,58 @@ winston.info('Flatiron app: starting');
 winston.info('Running on port: '+port+' in NODE_ENV: '+ v.NODE_ENV );
 app.start(port);
 
+function Circle(r, fill) {
+  this.r = r;
+  this.fill = fill;
+};
+
+// API ENDPOINT 
+// Takes radius and color from req.body and emits event to update a d3 circle.
+//
+app.router.post('/pulse',function(){
+  var self = this;
+  var body = self.req.body;
+  postHandler('/pulse', body, self.res, pulse);
+  // Update circles on clients.
+  var circle = new Circle(body.r,body.fill);
+  io.sockets.emit('pulse', circle);
+});
+
+// API ENDPOINT 
+// Takes req.body and saves it into the audit collection.
+//
+app.router.post('/audit',function () {
+  var self = this;
+  var body = self.req.body;
+  postHandler('/audit', body, self.res, audit);
+});
+
+// Display all configured API endpoints, aka routes.
+//
+winston.info('route',util.inspect(app.router.routes));
+
 // Realtime communication with the browser via socket.io.
 //
+
+// Socket.io server disconnect event handler
+function connectHandler(source) {
+  var s = new Shlock('socket.io','connect','unknown');
+  s.source = source;
+  s.system = v.MONGO_USER;
+  winston.info(util.inspect(app.server.connections));
+  winston.info(util.inspect(s));
+  shlocks.save(s);
+}
+
+// Socket.io server disconnect event handler
+function disconnectHandler(source) {
+  var s = new Shlock('socket.io','disconnect','unknown');
+  s.source = source;
+  s.system = v.MONGO_USER;
+  winston.info(util.inspect(s));
+  shlocks.save(s);
+}
+
 var io = require('socket.io').listen(app.server);
 io.sockets.on('connection', function(socket) {
   connectHandler('socket.io.server');
@@ -422,7 +452,6 @@ io.sockets.on('connection', function(socket) {
   });
   setInterval(
     function() {
-      winston.info('setInterval test');
       var data = {};
       data.connections = app.server.connections;
       data.sockets = io.sockets.clients().length;
@@ -434,30 +463,3 @@ io.sockets.on('disconnect', function(socket) {
   disconnectHandler('socket.io.server');
 });
 
-function Circle(r, fill) {
-  this.r = r;
-  this.fill = fill;
-};
-
-// Takes radius and color from req.body and emits event to update a d3 circle.
-//
-app.router.post('/pulse',function(){
-  var self = this;
-  var body = self.req.body;
-  postHandler('/pulse', body, self.res, pulse);
-  // Update circles on clients.
-  var circle = new Circle(body.r,body.fill);
-  io.sockets.emit('pulse', circle);
-});
-
-// Takes req.body and saves it into the audit collection.
-//
-app.router.post('/audit',function () {
-  var self = this;
-  var body = self.req.body;
-  postHandler('/audit', body, self.res, audit);
-});
-
-// Display all configured API endpoints, aka routes.
-//
-winston.info('route',util.inspect(app.router.routes));
