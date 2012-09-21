@@ -400,32 +400,8 @@ app.router.post('/audit',function () {
   postHandler('/audit', body, self.res, audit);
 });
 
-// Display all configured API endpoints, aka routes.
-//
-winston.info('route',util.inspect(app.router.routes));
-
-// Realtime communication with the browser via socket.io.
-//
-
-// Socket.io server disconnect event handler
-function connectHandler(source) {
-  var s = new Shlock('socket.io','connect','unknown');
-  s.source = source;
-  s.system = v.MONGO_USER;
-  winston.info(util.inspect(app.server.connections));
-  winston.info(util.inspect(s));
-  shlocks.save(s);
-}
-
-// Socket.io server disconnect event handler
-function disconnectHandler(source) {
-  var s = new Shlock('socket.io','disconnect','unknown');
-  s.source = source;
-  s.system = v.MONGO_USER;
-  winston.info(util.inspect(s));
-  shlocks.save(s);
-}
-
+// Each client will be assigned a random color and radius 
+// for the circles that they create.
 // Returns a color object with randomly generated color;
 function randomColor() {
   var color = Color();
@@ -442,22 +418,53 @@ function randomColor() {
 function randomR() {
   return Math.floor(Math.random()*20+4.5);
 }
+// Display all configured API endpoints, aka routes.
+winston.info('route',util.inspect(app.router.routes));
+
+// Realtime communication with the browser via socket.io.
+
+function getConnections(io) {
+  var data = {};
+  data.sockets = io.sockets.clients().length;
+  return data;
+}
+
+// Socket.io server disconnect event handler
+function connectHandler(io,socket,source) {
+  socket.broadcast.emit('load',getConnections(io));
+  socket.emit('load',getConnections(io));
+  var s = new Shlock('socket.io','connect','unknown');
+  s.source = source;
+  s.system = v.MONGO_USER;
+  winston.info(util.inspect(s));
+  shlocks.save(s);
+}
+
+// Socket.io server disconnect event handler
+function disconnectHandler(io,source) {
+  io.sockets.emit('load',getConnections(io));
+  var s = new Shlock('socket.io','disconnect','unknown');
+  s.source = source;
+  s.system = v.MONGO_USER;
+  winston.info(util.inspect(s));
+  shlocks.save(s);
+}
 
 var io = require('socket.io').listen(app.server);
 io.sockets.on('connection', function(socket) {
 
-  connectHandler('socket.io.server');
+  connectHandler(io,socket,'socket.io.server');
 
   // Establishing random color for this client.
   var color = randomColor();
-  var r = randomR();
   socket.set('color',color.hexString(), function(color) {
    winston.info(util.inspect(color));
   });
+  // Establishing random node size for this client.
+  var r = randomR();
   socket.set('r',r, function(r) {
    winston.info(util.inspect(r));
   });
-
   var attrs = {};
   attrs.color = color.hexString();
   attrs.r = r;
@@ -465,7 +472,7 @@ io.sockets.on('connection', function(socket) {
   winston.info(util.inspect(attrs));
 
   socket.on('disconnect', function() {
-    disconnectHandler('socket.io.client');
+    setTimeout(disconnectHandler,200,io,'socket.io.client');
   });
   
   socket.on('client', function (data) {
@@ -478,29 +485,23 @@ io.sockets.on('connection', function(socket) {
   socket.on('point', function(data) {
     winston.info(util.inspect(data));
     data.point = [data.coordX, data.coordY];
+    // Every point broadcast by a client will contain its 
+    // random color and radius
     socket.get('color',function(err,color) {
       data.color = color;
     });
     socket.get('r',function(err,r) {
       data.r = r;
     });
+    // Sending point click event to all clients.
     socket.broadcast.emit('point',data);
     data.system = v.MONGO_USER;
     data.source = 'socket.io.client';
     force.save(data,saveCallback);
   });
 
-  setInterval(
-    function() {
-      var data = {};
-      data.connections = app.server.connections;
-      data.sockets = io.sockets.clients().length;
-      socket.broadcast.emit('load',data);
-    },5000);
-
 });
 
 io.sockets.on('disconnect', function(socket) {
-  disconnectHandler('socket.io.server');
+  disconnectHandler(io,socket,'socket.io.server');
 });
-

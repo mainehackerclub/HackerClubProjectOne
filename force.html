@@ -143,7 +143,7 @@ socket.on('nodeAttr',function(data) {
 
 // This is firing too often.
 socket.on('load',function(data) {
-  //console.log('load ',data);
+  console.log('load ',data);
   $('.sockets').text(data.sockets)
   $('.connections').text(data.connections)
 });
