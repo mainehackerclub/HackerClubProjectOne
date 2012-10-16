@@ -5,13 +5,11 @@
     <script type="text/javascript" src="http://l2.io/ip.js?var=myip"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="src/d3/d3.js"></script>
-    <script type="text/javascript" src="deploy.js"></script>
+    <link rel="stylesheet" type="text/css" href="lib/style.css"/>
     <script>
     
     // Socket.io Initialization
-    var host = new Deploy().hostname;
-    var server = 'http://'+host;
-    var socket = io.connect(server);
+    var socket = io.connect();
     var gClient = {};
 
     // Custom metrics objects
@@ -57,7 +55,7 @@
   <br>
   </p>
   <p>
-    <img src="HackerClub.jpeg">
+    <img src="img/HackerClub.jpeg">
   </p>
   <p>
   List of projects:
@@ -68,6 +66,11 @@
     <li>
       <a href="force.html">Real-time collaborative physics simulation</a>
     </li>
+    <li>
+      <a href="replay.html">Replay of collaborative physics simulation activity</a>
+    </li>
   </p>
+  <script src="src/jquery/jquery-1.8.1.min.js"></script>
+  <script src="src/bootstrap/js/bootstrap.min.js"></script>
 </body>
 </html>
