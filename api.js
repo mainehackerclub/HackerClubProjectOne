@@ -1,9 +1,7 @@
 /*
- * Main.js 
+ * API.js 
  *
- * Initializes Flation application.
  * Defines REST API endpoints.
- * Defines Socket.io events & handlers.
  * Connects to Mongo as a data store.
  * Writes logs to console & Loggly service.
  *
@@ -78,8 +76,6 @@ audit.name = 'audit';
 force.name = 'force';
 pulse.name = 'pulse';
 shlocks.name = 'shlocks';
-
-    winston.info(util.inspect(force));
 
 // Generic callback function to use with collection.save function.
 //
@@ -405,10 +401,18 @@ app.router.get('/shlocks',function() {
 
 });
 
+// API ENDPOINT 
 app.router.post('/shlocks',function() {
   var self = this;
   var body = self.req.body;
   postHandler('/shlocks', body, self.res, shlocks);
+});
+
+// API ENDPOINT 
+app.router.post('/force',function() {
+  var self = this;
+  var body = self.req.body;
+  postHandler('/force', body, self.res, shlocks);
 });
 
 // API ENDPOINT 

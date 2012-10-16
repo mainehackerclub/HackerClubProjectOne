@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>D3.js Force-Directed Layout (Dynamic) - with Socket.io - in Replay Mode</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="http://l2.io/ip.js?var=myip"></script>
+    <script type="text/javascript" src="src/d3/d3.js"></script>
+    <script type="text/javascript" src="src/jquery/jquery-1.8.1.min.js"></script>
+    <script>
+    
+    // Socket.io Initialization
+    var socket = io.connect();
+    var gClient = {};
+
+    //Constants
+    var URL = '/replay.html';
+
+    // Custom metrics objects
+    var randId = Math.floor(Math.random()*1000000000);
+    
+    // Merge - takes all properties from src and add them to dest.
+    function merge(dest, src) {
+      Object.keys(src).forEach(function(key) {dest[key] = src[key]});
+    }
+
+    function Shlock(kind, method, url) {
+      this.kind = kind;
+      this.method = method;
+      this.url = url;
+      this.time = new Date().toJSON();
+    };
+
+    // Tracking IP of visitors, logging time as well.
+    function Client(IP, ID) {
+      this.IP = IP;
+      this.ID = ID;
+    };
+
+    Client.prototype.toString = function() {
+      var self = this;
+      return this.IP+' '+this.ID;
+    }
+
+    function clientIp() {
+      console.log('Executing clientIp');
+      var client = new Client(myip, randId);
+      gClient = client;
+      var ev = new Shlock('web', 'client', URL); 
+      merge(ev,client);
+      console.log(ev);
+      socket.emit('client', ev);
+    }
+    setTimeout(clientIp,1000);
+
+    </script>
+    <style type="text/css">
+
+      rect {
+        fill: #fff;
+      }
+
+      .node {
+      }
+
+      .cursor {
+        fill: none;
+        stroke: brown;
+        pointer-events: none;
+      }
+
+      .link {
+        stroke: #999;
+      }
+
+    </style>
+  </head>
+  <body bgcolor="#FF475A">
+    <p>
+    This page is part of a project on <a href="https://github.com/garrettwilkin/HackerClubProjectOne">github</a>.
+    <br>
+    Authored by: <a href="https://github.com/garrettwilkin">Garrett Wilkin</a>
+    <br>
+    </p>
+    <div >
+      <h3>
+      Active Users: <span class='sockets'>0</span><br>
+      </h3>
+    </div>
+    <div id="chart"></div>
+    Many thanks to:
+     <ol>
+       <li> The author of the D3 library, Mike Bostock, who created the 
+       <a href="https://github.com/mbostock/d3/blob/master/examples/force/force-dynamic.html">code that powers the movement of the dots</a>.</li>
+       <li>Guillermo Rauch, creator of <a href="http://socket.io/">socket.io</a> which made all the real time communication possible.</li>
+       <li>and of course, those <a href="http://nodejs.org">node.js</a> people.</li>
+     </ol>
+    </p>
+    <script type="text/javascript">
+
+//D3.js Force layout intialization.
+var width = 640,
+    height = 480,
+    fill = d3.scale.category20(),
+    nodes = [],
+    links = [];
+
+// Global viz variables;
+var localColor;
+var localR;
+
+var vis = d3.select("#chart").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+//Custom dispatcher for socket.io events.
+var socketDispatch = d3.dispatch("point");
+socketDispatch.on("point",socketPoint);
+
+// Register for point events.
+socket.on('point',function(data) {
+  console.log('point ',data);
+  socketDispatch.point(data);
+});
+
+// Register for color events.
+socket.on('nodeAttr',function(data) {
+  console.log('color ',data.color);
+  console.log('r ',data.r);
+  localColor = data.color;
+  localR = data.r;
+  vis.selectAll("circle.cursor")
+    .attr("r",localR);
+
+});
+
+// Maintain count of connected users.
+socket.on('load',function(data) {
+  console.log('load ',data);
+  $('.sockets').text(data.sockets)
+  $('.connections').text(data.connections)
+});
+
+// Continuted D3.js Force layout setup.
+vis.append("rect")
+    .attr("width", width)
+    .attr("height", height);
+
+var force = d3.layout.force()
+    .distance(30)
+    .nodes(nodes)
+    .links(links)
+    .charge(function(node) {
+      var charge = -30,
+        pq = 200,
+        max = 600;
+      if (node.r < 10) {
+        pq = node.r * node.r;
+      } else {
+        pq = node.r * 15;
+      }
+      if (pq > max) {
+        charge = -1 * max;
+      } else {
+        charge = pq * -1;
+      }
+      console.log('force.charge ',node.r,charge );
+      return charge;
+    })
+    .linkDistance(function(link) {
+      var r1 = link.source.r,
+          r2 = link.target.r,
+          min = 15;
+          distance = (r1 + r2) * 2;
+      if (distance < min) {
+        distance = min;
+      }
+      console.log('radius link', r1, r2,distance);
+      return distance;
+    })
+    .size([width, height]);
+
+force.on("tick", function() {
+  vis.selectAll("line.link")
+      .attr("x1", function(d) { return d.source.x; })
+      .attr("y1", function(d) { return d.source.y; })
+      .attr("x2", function(d) { return d.target.x; })
+      .attr("y2", function(d) { return d.target.y; });
+
+  vis.selectAll("circle.node")
+      .attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; });
+});
+
+vis.on("mousemove", function() {
+  cursor.attr("transform", "translate(" + d3.mouse(this) + ")");
+});
+
+function linkPoint(node) {
+  // add links to any nearby nodes
+  nodes.forEach(function(target) {
+    var x = target.x - node.x,
+        y = target.y - node.y,
+        threshold;
+    if (target.r < node.r) {
+      threshold = node.r * 2.75 ;
+    } else {
+      threshold = target.r * 2.75;
+    }
+    if (Math.sqrt(x * x + y * y) < threshold ) {
+      links.push({source: node, target: target});
+    }
+  });
+};
+
+function mousePoint(vis) {
+  var point = d3.mouse(vis),
+      node = {
+        x: point[0],
+        y: point[1],
+        fill: localColor,
+        r: localR,
+        source:"mouse"},
+      n = nodes.push(node);
+  linkPoint(node);
+  return point;
+};
+
+function socketPoint(data) {
+  console.log('socketPoint: ',data);
+  var point = data.point,
+      node = { 
+        x: point[0], 
+        y: point[1], 
+        fill: data.color,
+        r: data.r,
+        source:"socket"};
+      n = nodes.push(node);
+  linkPoint(node);
+  restart();
+};
+
+vis.on("mousedown", function() {
+  var self  = this;
+  var point = mousePoint(self);
+  var pack = {};
+  pack.coordX = point[0];
+  pack.coordY = point[1];
+  var ev = new Shlock('web','point',URL);
+  merge(ev,pack);
+  merge(ev,gClient);
+  socket.emit('point',ev);
+  restart();
+});
+
+restart();
+
+function setStroke (node) {
+  var color = "black";
+  return color;
+}
+
+function setFill (node) {
+  var color = "";
+  if (node.source=="mouse") {
+    color = localColor;
+  } else {
+    color = node.fill;
+  }
+  return color;
+}
+
+function setRadius (node) {
+  var r = "";
+  if (node.source=="mouse") {
+    r = localR;
+  } else {
+    r = node.r;
+  }
+  return r;
+}
+
+function restart() {
+  force.start();
+
+  vis.selectAll("line.link")
+      .data(links)
+    .enter().insert("line", "circle.node")
+      .attr("class", "link")
+      .attr("x1", function(d) { return d.source.x; })
+      .attr("y1", function(d) { return d.source.y; })
+      .attr("x2", function(d) { return d.target.x; })
+      .attr("y2", function(d) { return d.target.y; });
+
+  vis.selectAll("circle.node")
+      .data(nodes)
+    .enter().insert("circle", "circle.cursor")
+      .attr("class", "node")
+      .attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; })
+      .attr("r", setRadius)
+      .attr("fill", setFill)
+      .attr("stroke", setStroke)
+      .call(force.drag);
+}
+
+var cursor = vis.append("circle")
+    .attr("transform", "translate(-100,-100)")
+    .attr("class", "cursor");
+
+    </script>
+  </body>
+</html>
