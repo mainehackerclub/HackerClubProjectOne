@@ -46,23 +46,24 @@ var logglyOpt =
           password: v.LOGGLY_PASSWORD,
         }
       };
-winston.add(winston.transports.Loggly,logglyOpt);
+//winston.add(winston.transports.Loggly,logglyOpt);
 winston.info('=================== STARTING APP =================');
 
 // Reads all environment variables and returns then as an object.
 // If any variable is missing from the environment the node process will exit.
 function validateEnv() {
   winston.info('Validating Environment');
+  console.log(process.env);
   var fail = false;
   var v = {};
   var envVariables = 
-        [ 'LOGGLY_INPUT_TOKEN', 'LOGGLY_INPUT_NAME', 'LOGGLY_SUB_DOMAIN',
-         'LOGGLY_USERNAME', 'LOGGLY_PASSWORD', 'NODE_ENV','LOCATION',
+        [ 'NODE_ENV','LOCATION',
          'MAIN_PORT','API_PORT','API_HOST'];
   for (i in envVariables) {
     var item = envVariables[i];
-    winston.info('Reading env variable ',item);
-    if (!fail && app.config.env().get(item) === undefined) {
+    var envValue = process.env[item];
+    winston.info(' env variable ',item,' value ',envValue);
+    if (fail && envValue === undefined) {
       fail = true;
       winston.error(item,' undefined');
     } else {
@@ -95,7 +96,7 @@ app.http.before = [
 ];
 
 winston.info('Running on port: '+v.MAIN_PORT+' in NODE_ENV: '+ v.NODE_ENV + ' on ' + v.LOCATION );
-app.start(v.MAIN_PORT);
+app.start(8080);
 
 function Circle(r, fill) {
   this.r = r;
