@@ -17,9 +17,6 @@ var flatiron = require('flatiron'),
   ecstatic = require('ecstatic'),
   request = require('request');
 
-// Add Loggly support
-require('winston-loggly');
-  
 // Activate Flatiron plugins
 app.use(flatiron.plugins.http);
 
